@@ -1,0 +1,144 @@
+{
+  "name": "Order Lookup Tool",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "order_id"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "348e0217-a736-43fe-8f18-477d89fb013b",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "UlO9eefMNEtKxNQV",
+          "mode": "list",
+          "cachedResultName": "order",
+          "cachedResultUrl": "/projects/OVbqhMM15DSm48Kn/datatables/UlO9eefMNEtKxNQV"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "order_id",
+              "keyValue": "={{ $json.order_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        224,
+        0
+      ],
+      "id": "f0b89daa-6b83-4a26-bb89-17bb4106840e",
+      "name": "Get row(s)"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "baacabf2-9a5d-4600-8223-ecb15645b190",
+              "name": "order_id",
+              "value": "={{ $json.order_id }}",
+              "type": "string"
+            },
+            {
+              "id": "f5fec931-d1ca-4620-b324-bb13c0c5e44d",
+              "name": "customer_email",
+              "value": "={{ $json.customer_email }}",
+              "type": "string"
+            },
+            {
+              "id": "ac814737-24d9-4965-b6d4-30164dd238d0",
+              "name": "status",
+              "value": "={{ $json.status }}",
+              "type": "string"
+            },
+            {
+              "id": "770bbfa3-66f1-4624-828d-d457d9005cf5",
+              "name": "tracking_number",
+              "value": "={{ $json.tracking_number }}",
+              "type": "string"
+            },
+            {
+              "id": "1382dbca-b732-4bb5-a30b-493d326a4ffd",
+              "name": "estimated_delivery",
+              "value": "={{ $json.estimated_delivery }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        448,
+        0
+      ],
+      "id": "f92d5083-bd59-4854-9bbe-232b17fa35bd",
+      "name": "Edit Fields"
+    }
+  ],
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "json": {
+          "order_id": 12345
+        }
+      }
+    ]
+  },
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Get row(s)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s)": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "107d7e99-9a7f-425e-8771-bdfda738e18f",
+  "meta": {
+    "instanceId": "d4a9c82b3bc6d801c0182399c1a4c4b3f0effe59db2d515af8f12cd381619b5c"
+  },
+  "nodeGroups": [],
+  "id": "0QlhIam3VcKI58YF",
+  "tags": []
+}

@@ -1,0 +1,1403 @@
+{
+  "name": "Logistics & Delivery — Shop API",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "order-ready-for-shipment",
+        "options": {},
+        "responseMode": "onReceived"
+      },
+      "id": "5073f5e7-12f5-431d-b150-e7b7e5aae41d",
+      "name": "Order Ready For Shipment",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -4928,
+        720
+      ],
+      "webhookId": "739eeebd-526c-46bb-9ce2-17e44a1b107f"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Workflow Config').first().json.shopBaseUrl + '/api/automation/orders/' + encodeURIComponent($('Workflow Config').first().json.body?.order_id || 'SET_ORDER_ID_FOR_MANUAL_TEST') }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "17b6ca97-f41f-4eb5-971f-3aacf974d6c1",
+      "name": "Get Order",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -2240,
+        384
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "3824894a-e937-46ef-9f22-0d16f3b314d6",
+      "name": "Test Manually",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -2464,
+        832
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const TOLERANCE = 0.01;\nreturn $input.all().map((entry) => {\n  const order = entry.json;\n  const errors = [];\n\n  // Customer and address\n  if (!order.customer || !order.customer.email) errors.push('Missing customer or email');\n  const addr = order.shipping_address || {};\n  if (!addr.street || !addr.city || !addr.postal_code || !addr.country) errors.push('Incomplete shipping address');\n\n  // 1. Order status: only ready_for_shipment can be shipped\n  if (!['ready_for_shipment','packing'].includes(order.status)) {\n    errors.push('Invalid order status: ' + (order.status || 'missing') + ' (expected ready_for_shipment)');\n  }\n\n  // 2. Products\n  const products = Array.isArray(order.products) ? order.products : [];\n  if (products.length === 0) errors.push('No products in order');\n  let computedTotal = 0;\n  products.forEach((p, i) => {\n    const item = p || {};\n    const label = 'Product #' + (i + 1) + (item.sku ? ' (' + item.sku + ')' : '');\n    if (!item.sku) errors.push(label + ': missing sku');\n    if (!item.name) errors.push(label + ': missing name');\n    const qty = Number(item.qty);\n    const qtyOk = item.qty !== undefined && item.qty !== null && item.qty !== '' && Number.isFinite(qty) && qty > 0;\n    if (!qtyOk) errors.push(label + ': quantity must be greater than 0');\n    const price = Number(item.price);\n    const priceOk = item.price !== undefined && item.price !== null && item.price !== '' && Number.isFinite(price) && price >= 0;\n    if (!priceOk) errors.push(label + ': price must be 0 or more');\n    if (qtyOk && priceOk) computedTotal += qty * price;\n  });\n  computedTotal = Math.round((computedTotal + Number(order.shipping_amount || 0)) * 100) / 100;\n\n  // 3. Order total = sum(qty x price)\n  const total = Number(order.total_amount);\n  if (!Number.isFinite(total) || total <= 0) {\n    errors.push('Total amount must be greater than 0');\n  } else if (Math.abs(computedTotal - total) > TOLERANCE) {\n    errors.push('Order total mismatch (computed ' + computedTotal.toFixed(2) + ' vs order ' + total.toFixed(2) + ')');\n  }\n\n  // 4. Payment\n  if (order.payment_status !== 'paid') errors.push('Payment not completed (payment_status: ' + (order.payment_status || 'missing') + ')');\n  if (!order.currency) errors.push('Missing currency');\n  if (order.paid_amount !== undefined && order.paid_amount !== null) {\n    const paid = Number(order.paid_amount);\n    if (!Number.isFinite(paid) || (Number.isFinite(total) && Math.abs(paid - total) > TOLERANCE)) {\n      errors.push('Paid amount mismatch (paid ' + order.paid_amount + ' vs total ' + order.total_amount + ')');\n    }\n  }\n\n  return { json: { ...order, computed_total: computedTotal, isValid: errors.length === 0, validationErrors: errors } };\n});"
+      },
+      "id": "fa76db09-d4f5-452c-8a8f-cdb7904e3c55",
+      "name": "Validate Order",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2016,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(({json:o})=>{const errors=[...(o.validationErrors||[])];if(o.shipment)errors.push('Shipment already exists; do not send duplicate notifications');return {json:{...o,duplicate:!!o.shipment,validationErrors:errors,isValid:errors.length===0}};});"
+      },
+      "id": "e024739e-c7a8-4757-8747-832eda3c28cd",
+      "name": "Check Duplicate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -4256,
+        816
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "valid",
+              "leftValue": "={{ $json.isValid }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "7cdf6210-90ef-4826-9eda-9e9ac23adda8",
+      "name": "Is Order Valid",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1792,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// MOCK hand-off of the validated order to the Inventory & Warehouse process (DEMO).\nconst order = $json;\nconst products = (order.products || []).map((p) => ({ sku: p.sku, name: p.name, qty: Number(p.qty) }));\nconst quantities = {};\nproducts.forEach((p) => { quantities[p.sku] = p.qty; });\nreturn [{ json: {\n  order_id: order.id,\n  customer: order.customer,\n  shipping_address: order.shipping_address,\n  products,\n  quantities,\n  total_amount: order.total_amount,\n  currency: order.currency,\n  handoff_status: 'sent_to_warehouse',\n  sent_at: new Date().toISOString(),\n} }];"
+      },
+      "id": "bf33ab4b-dd4e-4db3-977b-f4324196f38f",
+      "name": "Send Order To Inventory & Warehouse",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3808,
+        752
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Workflow Config').first().json.shopBaseUrl + '/api/automation/orders/' + encodeURIComponent($('Get Order').first().json.id) + '/stock' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "47e3b0c2-fc73-467a-9e11-a0aa3e6460d5",
+      "name": "Check Stock",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -3584,
+        752
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "stock",
+              "leftValue": "={{ $json.stockAvailable }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a5add4f4-1a38-4608-a5a4-ca6b892941ec",
+      "name": "Is Stock Available",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -3360,
+        752
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Workflow Config').first().json.shopBaseUrl + '/api/automation/orders/' + encodeURIComponent($('Get Order').first().json.id) + '/reserve' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{}"
+      },
+      "id": "36e4f874-9422-45ec-ada9-bd5ba9c9e521",
+      "name": "Reserve Stock",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -3136,
+        656
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const o=$input.first().json; if(!o.inventoryReserved) throw new Error('Reservation failed; inspect this order in admin operations. No stock was deducted.'); return [{json:o}];"
+      },
+      "id": "8b02e0f2-d681-423a-8cf2-43e8164b6f53",
+      "name": "Update Inventory",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2912,
+        656
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all(); // Availability is already updated atomically by the shop reservation API."
+      },
+      "id": "819994fb-7600-45f8-b946-7823e3345e32",
+      "name": "Update Product Availability",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2688,
+        656
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const o=$input.first().json; return [{json:{order_id:o.id,warehouse_task_id:o.warehouse.taskId,warehouse_status:o.warehouse.status,warehouse_check_number:0}}];"
+      },
+      "id": "a3e5c16a-18e0-4260-b5b3-18e0146eda58",
+      "name": "Create Warehouse Task",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2464,
+        656
+      ]
+    },
+    {
+      "parameters": {
+        "resume": "timeInterval",
+        "amount": 5,
+        "unit": "seconds"
+      },
+      "id": "4e6f1680-25ee-4969-bd5e-96afd21fefb7",
+      "name": "Wait For Warehouse Update",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -2240,
+        656
+      ],
+      "webhookId": "57b77e5c-74c5-498b-a7a2-ee07bc0ff66b"
+    },
+    {
+      "parameters": {
+        "jsCode": "const state=$input.first().json;const check=Number($('Wait For Warehouse Update').first().json.warehouse_check_number||0)+1;return [{json:{...state,warehouse_check_number:check,max_checks:240,warehouse_status:check>=240&&['pending','packaging'].includes(state.warehouse_status)?'warehouse_timeout':state.warehouse_status}}];"
+      },
+      "id": "39406eed-ca64-421b-bc96-fa481bc9d8db",
+      "name": "Check Warehouse Status",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2016,
+        544
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "w0",
+                    "leftValue": "={{ $json.warehouse_status }}",
+                    "rightValue": "ready",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "ready"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "w1",
+                    "leftValue": "={{ $json.warehouse_status }}",
+                    "rightValue": "pending",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  },
+                  {
+                    "id": "w2",
+                    "leftValue": "={{ $json.warehouse_status }}",
+                    "rightValue": "picking",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  },
+                  {
+                    "id": "w3",
+                    "leftValue": "={{ $json.warehouse_status }}",
+                    "rightValue": "verification",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  },
+                  {
+                    "id": "w4",
+                    "leftValue": "={{ $json.warehouse_status }}",
+                    "rightValue": "packaging",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "or"
+              },
+              "renameOutput": true,
+              "outputKey": "in_progress"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "w5",
+                    "leftValue": "={{ $json.warehouse_status }}",
+                    "rightValue": "physical_discrepancy",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  },
+                  {
+                    "id": "w6",
+                    "leftValue": "={{ $json.warehouse_status }}",
+                    "rightValue": "damaged",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  },
+                  {
+                    "id": "w7",
+                    "leftValue": "={{ $json.warehouse_status }}",
+                    "rightValue": "missing",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  },
+                  {
+                    "id": "w8",
+                    "leftValue": "={{ $json.warehouse_status }}",
+                    "rightValue": "warehouse_timeout",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "or"
+              },
+              "renameOutput": true,
+              "outputKey": "issue"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "Unknown"
+        }
+      },
+      "id": "f759999f-fb82-4f30-8b4a-7a3a124eaa49",
+      "name": "Route Warehouse Status",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -1792,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Workflow Config').first().json.shopBaseUrl + '/api/automation/orders/' + encodeURIComponent($('Get Order').first().json.id) + '/ship' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{}"
+      },
+      "id": "f76dc116-dd40-493e-a969-fa65c2b91f8e",
+      "name": "Create Shipment",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1568,
+        288
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "sid",
+              "name": "shipment_id",
+              "value": "={{ $json.shipment_id }}",
+              "type": "string"
+            },
+            {
+              "id": "trk",
+              "name": "tracking_number",
+              "value": "={{ $json.tracking_number }}",
+              "type": "string"
+            },
+            {
+              "id": "car",
+              "name": "carrier",
+              "value": "={{ $json.carrier }}",
+              "type": "string"
+            },
+            {
+              "id": "turl",
+              "name": "tracking_url",
+              "value": "={{ $json.tracking_url }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c4d8b3ea-ae52-4b6f-ad49-8b9439629220",
+      "name": "Get Tracking Number",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -1344,
+        288
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all(); // Create Shipment has already persisted the shipment and shipped status."
+      },
+      "id": "a4574cc9-03f5-4e6e-850e-22b07e62cba7",
+      "name": "Update Order Shipped",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1120,
+        288
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Get Order').item.json.customer.email }}",
+        "subject": "=Your order {{ $('Get Order').item.json.id }} has shipped",
+        "message": "=Hi {{ $('Get Order').item.json.customer.name }},<br><br>Your order <b>{{ $('Get Order').item.json.id }}</b> is on its way!<br>Carrier: {{ $('Get Tracking Number').item.json.carrier }}<br>Tracking number: <b>{{ $('Get Tracking Number').item.json.tracking_number }}</b><br>Track it here: {{ $('Get Tracking Number').item.json.tracking_url }}<br><br>Thank you for shopping with us.",
+        "options": {}
+      },
+      "id": "262aa57c-634b-4638-b692-c426fc538e8e",
+      "name": "Notify Customer Shipped",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        -896,
+        288
+      ],
+      "webhookId": "fd2ef7d7-cee6-419f-8095-c1ed4d2714bf",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "resume": "timeInterval",
+        "amount": 5,
+        "unit": "seconds"
+      },
+      "id": "bc2dd185-a20a-462d-b125-2af606ce7d0c",
+      "name": "Wait Before Status Check",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -672,
+        288
+      ],
+      "webhookId": "1f90dc25-f0e9-4ede-a9e9-37e507e70bbe"
+    },
+    {
+      "parameters": {
+        "jsCode": "const state=$input.first().json;const previous=$('Wait Before Status Check').first().json;const check=Number(previous.delivery_check_number||0)+1;return [{json:{...state,delivery_check_number:check,max_checks:240,status:check>=240&&['in_transit','delayed'].includes(state.status)?'tracking_timeout':state.status}}];"
+      },
+      "id": "511ac4f9-9e62-44ed-ad7f-eca2783caa0b",
+      "name": "Get Delivery Status",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -448,
+        288
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "c0",
+                    "leftValue": "={{ $json.status }}",
+                    "rightValue": "in_transit",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "in_transit"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "c1",
+                    "leftValue": "={{ $json.status }}",
+                    "rightValue": "delivered",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "delivered"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "c2",
+                    "leftValue": "={{ $json.status }}",
+                    "rightValue": "delayed",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "delayed"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "e1",
+                    "leftValue": "={{ $json.status }}",
+                    "rightValue": "lost",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  },
+                  {
+                    "id": "e2",
+                    "leftValue": "={{ $json.status }}",
+                    "rightValue": "damaged",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  },
+                  {
+                    "id": "e3",
+                    "leftValue": "={{ $json.status }}",
+                    "rightValue": "failed",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  },
+                  {
+                    "id": "e4",
+                    "leftValue": "={{ $json.status }}",
+                    "rightValue": "returned",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  },
+                  {
+                    "id": "e5",
+                    "leftValue": "={{ $json.status }}",
+                    "rightValue": "tracking_timeout",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "or"
+              },
+              "renameOutput": true,
+              "outputKey": "exception"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "Unknown"
+        }
+      },
+      "id": "b87d0c45-7848-4bf5-b34e-0e704d226a3f",
+      "name": "Route Delivery Status",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -224,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all(); // Courier status comes from the shop; do not invent scans."
+      },
+      "id": "0728d446-516a-472a-8e31-46bff3a6b68a",
+      "name": "Update Order In Transit",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Workflow Config').first().json.shopBaseUrl + '/api/automation/orders/' + encodeURIComponent($('Get Order').first().json.id) + '/delivery' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"status\":\"delivered\"}"
+      },
+      "id": "9df3880c-cbca-43f4-b129-847c82ab7566",
+      "name": "Update Order Delivered",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        0,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Get Order').item.json.customer.email }}",
+        "subject": "=Your order {{ $('Get Order').item.json.id }} was delivered",
+        "message": "=Hi {{ $('Get Order').item.json.customer.name }},<br><br>Great news — your order <b>{{ $('Get Order').item.json.id }}</b> has been delivered.<br>We hope you enjoy your purchase!<br><br>If anything is wrong with your order, just reply to this email and our team will help.",
+        "options": {}
+      },
+      "id": "915d6558-9f8e-41c7-9921-f3cd9c69f63b",
+      "name": "Notify Customer Delivered",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        224,
+        192
+      ],
+      "webhookId": "4d4a290b-0211-4286-82a7-2c7bb49ae117",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Workflow Config').first().json.shopBaseUrl + '/api/automation/orders/' + encodeURIComponent($('Get Order').first().json.id) + '/reconcile' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{}"
+      },
+      "id": "83a75ffd-c055-43bd-9338-cc0e4ef8c77f",
+      "name": "Reconcile Payment",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        448,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "rec",
+              "leftValue": "={{ $json.reconciled }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "2a416b7a-000b-4bea-a019-fe344693cdbc",
+      "name": "Is Payment Consistent",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        672,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "maya.zahrouni@gmail.com",
+        "subject": "=Payment inconsistency for order {{ $json.order_id }}",
+        "message": "=A payment/transaction inconsistency was detected during reconciliation.<br><br>Order: <b>{{ $json.order_id }}</b><br>Order total: {{ $json.total_amount }} {{ $json.currency }}<br>Paid amount: {{ $json.paid_amount }} {{ $json.currency }}<br>Payment status: {{ $json.payment_status }}<br>Reason: {{ $json.discrepancyReason }}<br><br>Please review manually.",
+        "options": {}
+      },
+      "id": "690b20db-6d55-414a-9b25-69e855690d51",
+      "name": "Notify Employee Inconsistency",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        896,
+        192
+      ],
+      "webhookId": "99c994b6-367f-44f5-85a6-e0f81c850212",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Workflow Config').first().json.shopBaseUrl + '/api/automation/orders/' + encodeURIComponent($('Get Order').first().json.id) + '/escalate' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({reason: $json.validationErrors?.join('; ') || $json.stockErrors?.join('; ') || $json.discrepancyReason || $json.warehouse_status || $json.status || 'Manual logistics review required'}) }}"
+      },
+      "id": "ed93154d-abdb-43cf-bf4d-c3d5e3dbe4ef",
+      "name": "Escalate To Human",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        0,
+        576
+      ],
+      "webhookId": "f88f2613-75b1-4a81-a9c9-89d9a656f96a"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all(); // Courier status has already been persisted."
+      },
+      "id": "89cabc4f-00e8-4cc2-9f7a-4275f507c30f",
+      "name": "Update Order Delayed",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Get Order').item.json.customer.email }}",
+        "subject": "=Update on your order {{ $('Get Order').item.json.id }}",
+        "message": "=Hi {{ $('Get Order').item.json.customer.name }},<br><br>We wanted to let you know your order <b>{{ $('Get Order').item.json.id }}</b> is experiencing a delivery delay. We're on it and will keep you posted.<br><br>Thank you for your patience.",
+        "options": {}
+      },
+      "id": "3dc5eb72-04ec-44e4-aa8c-8dac2416408a",
+      "name": "Notify Customer Delayed",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        224,
+        384
+      ],
+      "webhookId": "3a1c9858-3c2d-48d2-8932-476956d73ddc",
+      "disabled": true
+    },
+    {
+      "id": "54cbf51b-98b0-43b1-b4bb-e331e11abd37",
+      "name": "Workflow Config",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nreturn [{json: {...input, shopBaseUrl: 'http://host.docker.internal:3000'}}];"
+      },
+      "position": [
+        180,
+        -500
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "stock",
+              "leftValue": "={{ $json.inventoryReserved }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "5e9c32b1-41e5-45c3-ab89-11542dc131ab",
+      "name": "Reservation Succeeded",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -500,
+        -200
+      ]
+    },
+    {
+      "id": "e3f5b448-22d8-4082-9613-7359bc487df3",
+      "name": "Read Warehouse From Shop",
+      "position": [
+        -550,
+        0
+      ],
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Workflow Config').first().json.shopBaseUrl + '/api/automation/orders/' + encodeURIComponent($('Get Order').first().json.id) + '/warehouse' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      }
+    },
+    {
+      "id": "ae1a2189-647c-45fd-b4fa-f2c683d5d745",
+      "name": "Read Shipment From Shop",
+      "position": [
+        -550,
+        300
+      ],
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Workflow Config').first().json.shopBaseUrl + '/api/automation/orders/' + encodeURIComponent($('Get Order').first().json.id) + '/shipment' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Order Ready For Shipment": {
+      "main": [
+        [
+          {
+            "node": "Workflow Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Order": {
+      "main": [
+        [
+          {
+            "node": "Validate Order",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Test Manually": {
+      "main": [
+        [
+          {
+            "node": "Workflow Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Order": {
+      "main": [
+        [
+          {
+            "node": "Check Duplicate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Duplicate": {
+      "main": [
+        [
+          {
+            "node": "Is Order Valid",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Order Valid": {
+      "main": [
+        [
+          {
+            "node": "Send Order To Inventory & Warehouse",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Escalate To Human",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Order To Inventory & Warehouse": {
+      "main": [
+        [
+          {
+            "node": "Check Stock",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Stock": {
+      "main": [
+        [
+          {
+            "node": "Is Stock Available",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Stock Available": {
+      "main": [
+        [
+          {
+            "node": "Reserve Stock",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Escalate To Human",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reserve Stock": {
+      "main": [
+        [
+          {
+            "node": "Reservation Succeeded",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Inventory": {
+      "main": [
+        [
+          {
+            "node": "Update Product Availability",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Product Availability": {
+      "main": [
+        [
+          {
+            "node": "Create Warehouse Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Warehouse Task": {
+      "main": [
+        [
+          {
+            "node": "Wait For Warehouse Update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait For Warehouse Update": {
+      "main": [
+        [
+          {
+            "node": "Read Warehouse From Shop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Warehouse Status": {
+      "main": [
+        [
+          {
+            "node": "Route Warehouse Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Warehouse Status": {
+      "main": [
+        [
+          {
+            "node": "Create Shipment",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait For Warehouse Update",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Escalate To Human",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Escalate To Human",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Shipment": {
+      "main": [
+        [
+          {
+            "node": "Get Tracking Number",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Tracking Number": {
+      "main": [
+        [
+          {
+            "node": "Update Order Shipped",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Order Shipped": {
+      "main": [
+        [
+          {
+            "node": "Notify Customer Shipped",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify Customer Shipped": {
+      "main": [
+        [
+          {
+            "node": "Wait Before Status Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait Before Status Check": {
+      "main": [
+        [
+          {
+            "node": "Read Shipment From Shop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Delivery Status": {
+      "main": [
+        [
+          {
+            "node": "Route Delivery Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Delivery Status": {
+      "main": [
+        [
+          {
+            "node": "Update Order In Transit",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update Order Delivered",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update Order Delayed",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Escalate To Human",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Escalate To Human",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Order In Transit": {
+      "main": [
+        [
+          {
+            "node": "Wait Before Status Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Order Delivered": {
+      "main": [
+        [
+          {
+            "node": "Notify Customer Delivered",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify Customer Delivered": {
+      "main": [
+        [
+          {
+            "node": "Reconcile Payment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reconcile Payment": {
+      "main": [
+        [
+          {
+            "node": "Is Payment Consistent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Payment Consistent": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Notify Employee Inconsistency",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify Employee Inconsistency": {
+      "main": [
+        [
+          {
+            "node": "Escalate To Human",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Order Delayed": {
+      "main": [
+        [
+          {
+            "node": "Notify Customer Delayed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify Customer Delayed": {
+      "main": [
+        [
+          {
+            "node": "Wait Before Status Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Workflow Config": {
+      "main": [
+        [
+          {
+            "node": "Get Order",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reservation Succeeded": {
+      "main": [
+        [
+          {
+            "node": "Update Inventory",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Escalate To Human",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Warehouse From Shop": {
+      "main": [
+        [
+          {
+            "node": "Check Warehouse Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Shipment From Shop": {
+      "main": [
+        [
+          {
+            "node": "Get Delivery Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "nodeGroups": [],
+  "tags": []
+}

@@ -1,0 +1,28 @@
+{
+  "originalNodeCount": 57,
+  "originalNodesPreservedExactly": true,
+  "originalConnectionsPreservedExactly": true,
+  "originalSettingsPreservedExactly": true,
+  "originalPinDataPreserved": true,
+  "originalLayoutPreserved": true,
+  "newOrderHandlingNodes": 23,
+  "sourceFiles": [
+    {
+      "file": "E-commerce (1).json",
+      "sha256": "8c225406eb04a4d9841f193f8c2390c1a12a6e6e78a96afc01830f81273ca683"
+    },
+    {
+      "file": "Logistics-Delivery-Automation-3.json",
+      "sha256": "89204ac4c92eb6176fd4d6e8040b142cc17509e205905c430c3075c1c90d39cf"
+    },
+    {
+      "file": "Order-Lookup-Tool (1).json",
+      "sha256": "0ca46d0680145180762fcce5cf0eb1b8cbbf5a08c6d5982e7adb6cb32cd40b02"
+    }
+  ],
+  "notes": [
+    "Original external workflow, credentials, data-table bindings, and mock behavior remain unchanged.",
+    "One merged workflow has new wrapper metadata and starts inactive. Exact original workflow metadata is retained in Original-Workflows-Bundle.json.",
+    "Original source files were not written."
+  ]
+}

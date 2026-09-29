@@ -1,0 +1,85 @@
+{
+  "name": "Larkspur demo — order automation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "larkspur-events",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "larkspur-hook",
+      "name": "Shop events",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "larkspur-events"
+    },
+    {
+      "parameters": {
+        "jsCode": "const event=$input.first().json.body;let action=event.type==='order.created'?'validate':null;if(!event.logisticsManaged){const actions={'order.confirmed':'reserve','warehouse.ready':'ship'};action=action||actions[event.type];if(event.type==='shipment.updated'&&event.order?.shipment?.status==='delivered')action='reconcile';}if(!action||!event.order?.id)return [];return [{json:{url:'http://host.docker.internal:3000/api/orders/'+encodeURIComponent(event.order.id)+'/'+action,eventId:event.id,action}}];"
+      },
+      "id": "choose-action",
+      "name": "Choose order action",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.url }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{}",
+        "options": {},
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "id": "update-shop",
+      "name": "Update demo shop",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Shop events": {
+      "main": [
+        [
+          {
+            "node": "Choose order action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Choose order action": {
+      "main": [
+        [
+          {
+            "node": "Update demo shop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false,
+  "pinData": {},
+  "tags": []
+}

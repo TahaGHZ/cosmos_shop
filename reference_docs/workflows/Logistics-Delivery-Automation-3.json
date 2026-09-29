@@ -1,0 +1,1319 @@
+{
+  "name": "Logistics & Delivery Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "order-ready-for-shipment",
+        "options": {}
+      },
+      "id": "5073f5e7-12f5-431d-b150-e7b7e5aae41d",
+      "name": "Order Ready For Shipment",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -4928,
+        720
+      ],
+      "webhookId": "739eeebd-526c-46bb-9ce2-17e44a1b107f"
+    },
+    {
+      "parameters": {
+        "jsCode": "// MOCK order lookup for DEMO — replace with a real HTTP Request node later.\n// Optional webhook body fields for testing:\n//   order_id: 'ORD-9999' -> duplicate order\n//   demo_scenario: normal | delayed | lost | damaged | failed | returned | unknown_status | stuck\n//                  | out_of_stock | invalid_status | total_mismatch | payment_mismatch\n//                  | warehouse_discrepancy | warehouse_damaged | warehouse_missing | warehouse_stuck\nconst body = $json.body || {};\nconst orderId = body.order_id || 'ORD-1001';\nconst scenario = body.demo_scenario || 'normal';\nconst order = {\n  id: orderId,\n  customer: { id: 'CUST-55', name: 'Jane Doe', email: 'maya.zahrouni@gmail.com' },\n  shipping_address: { street: '123 Market Street', city: 'Lisbon', postal_code: '1100-001', country: 'PT' },\n  products: [\n    { sku: 'SKU-1', name: 'Wireless Headphones', qty: 1, price: 89.9 },\n    { sku: 'SKU-2', name: 'USB-C Cable', qty: 2, price: 9.9 },\n  ],\n  total_amount: 109.7,\n  paid_amount: 109.7,\n  currency: 'EUR',\n  payment_status: 'paid',\n  status: 'ready_for_shipment',\n  demo_scenario: scenario,\n};\nif (scenario === 'out_of_stock') { order.products[1].qty = 8; order.total_amount = 169.1; order.paid_amount = 169.1; }\nif (scenario === 'invalid_status') { order.status = 'cancelled'; }\nif (scenario === 'total_mismatch') { order.total_amount = 120; order.paid_amount = 120; }\nreturn [{ json: order }];"
+      },
+      "id": "17b6ca97-f41f-4eb5-971f-3aacf974d6c1",
+      "name": "Get Order",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2240,
+        384
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "3824894a-e937-46ef-9f22-0d16f3b314d6",
+      "name": "Test Manually",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -2464,
+        832
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const TOLERANCE = 0.01;\nreturn $input.all().map((entry) => {\n  const order = entry.json;\n  const errors = [];\n\n  // Customer and address\n  if (!order.customer || !order.customer.email) errors.push('Missing customer or email');\n  const addr = order.shipping_address || {};\n  if (!addr.street || !addr.city || !addr.postal_code || !addr.country) errors.push('Incomplete shipping address');\n\n  // 1. Order status: only ready_for_shipment can be shipped\n  if (order.status !== 'ready_for_shipment') {\n    errors.push('Invalid order status: ' + (order.status || 'missing') + ' (expected ready_for_shipment)');\n  }\n\n  // 2. Products\n  const products = Array.isArray(order.products) ? order.products : [];\n  if (products.length === 0) errors.push('No products in order');\n  let computedTotal = 0;\n  products.forEach((p, i) => {\n    const item = p || {};\n    const label = 'Product #' + (i + 1) + (item.sku ? ' (' + item.sku + ')' : '');\n    if (!item.sku) errors.push(label + ': missing sku');\n    if (!item.name) errors.push(label + ': missing name');\n    const qty = Number(item.qty);\n    const qtyOk = item.qty !== undefined && item.qty !== null && item.qty !== '' && Number.isFinite(qty) && qty > 0;\n    if (!qtyOk) errors.push(label + ': quantity must be greater than 0');\n    const price = Number(item.price);\n    const priceOk = item.price !== undefined && item.price !== null && item.price !== '' && Number.isFinite(price) && price >= 0;\n    if (!priceOk) errors.push(label + ': price must be 0 or more');\n    if (qtyOk && priceOk) computedTotal += qty * price;\n  });\n  computedTotal = Math.round(computedTotal * 100) / 100;\n\n  // 3. Order total = sum(qty x price)\n  const total = Number(order.total_amount);\n  if (!Number.isFinite(total) || total <= 0) {\n    errors.push('Total amount must be greater than 0');\n  } else if (Math.abs(computedTotal - total) > TOLERANCE) {\n    errors.push('Order total mismatch (computed ' + computedTotal.toFixed(2) + ' vs order ' + total.toFixed(2) + ')');\n  }\n\n  // 4. Payment\n  if (order.payment_status !== 'paid') errors.push('Payment not completed (payment_status: ' + (order.payment_status || 'missing') + ')');\n  if (!order.currency) errors.push('Missing currency');\n  if (order.paid_amount !== undefined && order.paid_amount !== null) {\n    const paid = Number(order.paid_amount);\n    if (!Number.isFinite(paid) || (Number.isFinite(total) && Math.abs(paid - total) > TOLERANCE)) {\n      errors.push('Paid amount mismatch (paid ' + order.paid_amount + ' vs total ' + order.total_amount + ')');\n    }\n  }\n\n  return { json: { ...order, computed_total: computedTotal, isValid: errors.length === 0, validationErrors: errors } };\n});"
+      },
+      "id": "fa76db09-d4f5-452c-8a8f-cdb7904e3c55",
+      "name": "Validate Order",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2016,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// MOCK list of order IDs already processed (DEMO) — replace with a real lookup later.\nconst PROCESSED_ORDER_IDS = ['ORD-9999'];\nreturn $input.all().map((entry) => {\n  const order = entry.json;\n  const duplicate = PROCESSED_ORDER_IDS.includes(order.id);\n  const errors = [...(order.validationErrors || [])];\n  if (duplicate) errors.push('Duplicate order: ' + order.id + ' was already processed');\n  return { json: { ...order, duplicate, validationErrors: errors, isValid: order.isValid === true && !duplicate } };\n});"
+      },
+      "id": "e024739e-c7a8-4757-8747-832eda3c28cd",
+      "name": "Check Duplicate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -4256,
+        816
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "valid",
+              "leftValue": "={{ $json.isValid }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "7cdf6210-90ef-4826-9eda-9e9ac23adda8",
+      "name": "Is Order Valid",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1792,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// MOCK hand-off of the validated order to the Inventory & Warehouse process (DEMO).\nconst order = $json;\nconst products = (order.products || []).map((p) => ({ sku: p.sku, name: p.name, qty: Number(p.qty) }));\nconst quantities = {};\nproducts.forEach((p) => { quantities[p.sku] = p.qty; });\nreturn [{ json: {\n  order_id: order.id,\n  customer: order.customer,\n  shipping_address: order.shipping_address,\n  products,\n  quantities,\n  total_amount: order.total_amount,\n  currency: order.currency,\n  handoff_status: 'sent_to_warehouse',\n  sent_at: new Date().toISOString(),\n} }];"
+      },
+      "id": "bf33ab4b-dd4e-4db3-977b-f4324196f38f",
+      "name": "Send Order To Inventory & Warehouse",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3808,
+        752
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// MOCK inventory levels (DEMO) — replace with a real inventory lookup later.\nconst MOCK_STOCK = { 'SKU-1': 10, 'SKU-2': 5 };\nconst req = $json;\nconst stockErrors = [];\nconst stockLines = (req.products || []).map((p) => {\n  const known = Object.prototype.hasOwnProperty.call(MOCK_STOCK, p.sku);\n  const available = known ? MOCK_STOCK[p.sku] : 0;\n  const sufficient = known && p.qty <= available;\n  if (!known) stockErrors.push('Unknown SKU in inventory: ' + p.sku);\n  else if (!sufficient) stockErrors.push('Insufficient stock for ' + p.sku + ' (requested ' + p.qty + ', available ' + available + ')');\n  return { sku: p.sku, name: p.name, requested: p.qty, available, sufficient };\n});\nreturn [{ json: { order_id: req.order_id, stockAvailable: stockErrors.length === 0, stockErrors, stockLines } }];"
+      },
+      "id": "47e3b0c2-fc73-467a-9e11-a0aa3e6460d5",
+      "name": "Check Stock",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3584,
+        752
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "stock",
+              "leftValue": "={{ $json.stockAvailable }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a5add4f4-1a38-4608-a5a4-ca6b892941ec",
+      "name": "Is Stock Available",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -3360,
+        752
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// MOCK stock reservation / deduction (DEMO).\nconst reservedItems = $json.stockLines.map((l) => ({\n  sku: l.sku,\n  name: l.name,\n  reserved_qty: l.requested,\n  stock_before: l.available,\n  stock_after: l.available - l.requested,\n}));\nconst remainingStock = {};\nreservedItems.forEach((i) => { remainingStock[i.sku] = i.stock_after; });\nreturn [{ json: { order_id: $json.order_id, stockReserved: true, reservation_id: 'RES-' + $json.order_id, reservedItems, remainingStock } }];"
+      },
+      "id": "36e4f874-9422-45ec-ada9-bd5ba9c9e521",
+      "name": "Reserve Stock",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3136,
+        656
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// MOCK inventory update after reservation (DEMO).\nconst updatedItems = $json.reservedItems.map((i) => ({\n  sku: i.sku,\n  previous_qty: i.stock_before,\n  new_qty: i.stock_after,\n  change: -i.reserved_qty,\n}));\nreturn [{ json: { order_id: $json.order_id, inventoryUpdated: true, updatedItems, updated_at: new Date().toISOString() } }];"
+      },
+      "id": "8b02e0f2-d681-423a-8cf2-43e8164b6f53",
+      "name": "Update Inventory",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2912,
+        656
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// MOCK availability update derived from remaining stock (DEMO).\nconst productAvailability = $json.updatedItems.map((i) => ({\n  sku: i.sku,\n  available_qty: i.new_qty,\n  availability: i.new_qty > 0 ? 'available' : 'out_of_stock',\n}));\nreturn [{ json: { order_id: $json.order_id, availabilityUpdated: true, productAvailability } }];"
+      },
+      "id": "819994fb-7600-45f8-b946-7823e3345e32",
+      "name": "Update Product Availability",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2688,
+        656
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// MOCK warehouse task creation (DEMO).\n// Picking, verification and packaging are PHYSICAL tasks done by warehouse staff, not by n8n.\nconst handoff = $('Send Order To Inventory & Warehouse').first().json;\nreturn [{ json: {\n  warehouse_task_id: 'WH-TASK-001',\n  order_id: handoff.order_id,\n  products: handoff.products,\n  quantities: handoff.quantities,\n  shipping_address: handoff.shipping_address,\n  status: 'pending',\n  human_steps: ['pick products', 'verify products', 'package order'],\n  assigned_to: 'Warehouse team',\n  created_at: new Date().toISOString(),\n} }];"
+      },
+      "id": "a3e5c16a-18e0-4260-b5b3-18e0146eda58",
+      "name": "Create Warehouse Task",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2464,
+        656
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "4e6f1680-25ee-4969-bd5e-96afd21fefb7",
+      "name": "Wait For Warehouse Update",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -2240,
+        656
+      ],
+      "webhookId": "57b77e5c-74c5-498b-a7a2-ee07bc0ff66b"
+    },
+    {
+      "parameters": {
+        "jsCode": "const MAX_CHECKS = 5;\nconst IN_PROGRESS = ['pending', 'picking', 'verification', 'packaging'];\n\nconst task = $('Create Warehouse Task').first().json;\nconst scenario = $('Get Order').first().json.demo_scenario || 'normal';\n\nconst previousCheck = Number($json.warehouse_check_number || 0);\nconst check = previousCheck + 1;\n\nlet status;\n\nif (scenario === 'warehouse_discrepancy') {\n  status = 'physical_discrepancy';\n}\nelse if (scenario === 'warehouse_damaged') {\n  status = 'damaged';\n}\nelse if (scenario === 'warehouse_missing') {\n  status = 'missing';\n}\nelse if (scenario === 'warehouse_stuck') {\n  status = IN_PROGRESS[Math.min(check - 1, IN_PROGRESS.length - 1)];\n\n  if (check >= MAX_CHECKS) {\n    status = 'warehouse_timeout';\n  }\n}\nelse {\n  // Normal demo:\n  // first check = packaging\n  // second check = ready\n  status = check === 1 ? 'packaging' : 'ready';\n}\n\nreturn [{\n  json: {\n    warehouse_task_id: task.warehouse_task_id,\n    order_id: task.order_id,\n    warehouse_status: status,\n    warehouse_check_number: check,\n    max_checks: MAX_CHECKS\n  }\n}];"
+      },
+      "id": "39406eed-ca64-421b-bc96-fa481bc9d8db",
+      "name": "Check Warehouse Status",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2016,
+        544
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "w0",
+                    "leftValue": "={{ $json.warehouse_status }}",
+                    "rightValue": "ready",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "ready"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "w1",
+                    "leftValue": "={{ $json.warehouse_status }}",
+                    "rightValue": "pending",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  },
+                  {
+                    "id": "w2",
+                    "leftValue": "={{ $json.warehouse_status }}",
+                    "rightValue": "picking",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  },
+                  {
+                    "id": "w3",
+                    "leftValue": "={{ $json.warehouse_status }}",
+                    "rightValue": "verification",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  },
+                  {
+                    "id": "w4",
+                    "leftValue": "={{ $json.warehouse_status }}",
+                    "rightValue": "packaging",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "or"
+              },
+              "renameOutput": true,
+              "outputKey": "in_progress"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "w5",
+                    "leftValue": "={{ $json.warehouse_status }}",
+                    "rightValue": "physical_discrepancy",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  },
+                  {
+                    "id": "w6",
+                    "leftValue": "={{ $json.warehouse_status }}",
+                    "rightValue": "damaged",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  },
+                  {
+                    "id": "w7",
+                    "leftValue": "={{ $json.warehouse_status }}",
+                    "rightValue": "missing",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  },
+                  {
+                    "id": "w8",
+                    "leftValue": "={{ $json.warehouse_status }}",
+                    "rightValue": "warehouse_timeout",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "or"
+              },
+              "renameOutput": true,
+              "outputKey": "issue"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "Unknown"
+        }
+      },
+      "id": "f759999f-fb82-4f30-8b4a-7a3a124eaa49",
+      "name": "Route Warehouse Status",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -1792,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// MOCK courier create-shipment for demo — replace with a real HTTP Request node later.\nreturn [{ json: {\n  shipment_id: 'SHIP-001',\n  tracking_number: 'TN123456789',\n  carrier: 'Mock Courier',\n  status: 'created',\n} }];"
+      },
+      "id": "f76dc116-dd40-493e-a969-fa65c2b91f8e",
+      "name": "Create Shipment",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1568,
+        288
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "sid",
+              "name": "shipment_id",
+              "value": "={{ $json.shipment_id }}",
+              "type": "string"
+            },
+            {
+              "id": "trk",
+              "name": "tracking_number",
+              "value": "={{ $json.tracking_number }}",
+              "type": "string"
+            },
+            {
+              "id": "car",
+              "name": "carrier",
+              "value": "={{ $json.carrier }}",
+              "type": "string"
+            },
+            {
+              "id": "turl",
+              "name": "tracking_url",
+              "value": "=https://mock.courier.com/track/{{ $json.tracking_number }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c4d8b3ea-ae52-4b6f-ad49-8b9439629220",
+      "name": "Get Tracking Number",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -1344,
+        288
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// MOCK order update (shipped) for demo — replace with a real HTTP Request node later.\nconst trk = $('Get Tracking Number').item.json;\nreturn [{ json: {\n  order_id: $('Get Order').item.json.id,\n  status: 'shipped',\n  shipment_id: trk.shipment_id,\n  tracking_number: trk.tracking_number,\n  carrier: trk.carrier,\n  ok: true,\n} }];"
+      },
+      "id": "a4574cc9-03f5-4e6e-850e-22b07e62cba7",
+      "name": "Update Order Shipped",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1120,
+        288
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Get Order').item.json.customer.email }}",
+        "subject": "=Your order {{ $('Get Order').item.json.id }} has shipped",
+        "message": "=Hi {{ $('Get Order').item.json.customer.name }},<br><br>Your order <b>{{ $('Get Order').item.json.id }}</b> is on its way!<br>Carrier: {{ $('Get Tracking Number').item.json.carrier }}<br>Tracking number: <b>{{ $('Get Tracking Number').item.json.tracking_number }}</b><br>Track it here: {{ $('Get Tracking Number').item.json.tracking_url }}<br><br>Thank you for shopping with us.",
+        "options": {}
+      },
+      "id": "262aa57c-634b-4638-b692-c426fc538e8e",
+      "name": "Notify Customer Shipped",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        -896,
+        288
+      ],
+      "webhookId": "fd2ef7d7-cee6-419f-8095-c1ed4d2714bf",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "Ut6jjW2BjWSiGWt6",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "bc2dd185-a20a-462d-b125-2af606ce7d0c",
+      "name": "Wait Before Status Check",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -672,
+        288
+      ],
+      "webhookId": "1f90dc25-f0e9-4ede-a9e9-37e507e70bbe"
+    },
+    {
+      "parameters": {
+        "jsCode": "const MAX_CHECKS = 5;\n\nconst trk = $('Get Tracking Number').first().json;\nconst order = $('Get Order').first().json;\n\n// Keep the counter in the workflow data\nlet previousCheck = Number($json.delivery_check_number || 0);\n// The delayed branch passes through a Gmail node (whose output replaces the item),\n// so recover the counter from \"Update Order Delayed\" when it is not in $json.\nif (!previousCheck && $('Update Order Delayed').isExecuted) {\n  previousCheck = Number($('Update Order Delayed').last().json.delivery_check_number || 0);\n}\nconst check = previousCheck + 1;\n\nlet status;\n\nswitch (order.demo_scenario || 'normal') {\n  case 'delayed':\n    status = check === 1 ? 'delayed' : 'delivered';\n    break;\n\n  case 'lost':\n  case 'damaged':\n  case 'failed':\n  case 'returned':\n    status = order.demo_scenario;\n    break;\n\n  case 'unknown_status':\n    status = 'held_at_customs';\n    break;\n\n  case 'stuck':\n    status = 'in_transit';\n    break;\n\n  default:\n    status = check === 1 ? 'in_transit' : 'delivered';\n}\n\nif (\n  (status === 'in_transit' || status === 'delayed') &&\n  check >= MAX_CHECKS\n) {\n  status = 'tracking_timeout';\n}\n\nconst out = {\n  shipment_id: trk.shipment_id,\n  tracking_number: trk.tracking_number,\n  carrier: trk.carrier,\n  status,\n  delivery_check_number: check,\n  max_checks: MAX_CHECKS\n};\n\nif (status === 'delivered') {\n  out.delivered_at = new Date().toISOString();\n}\n\nreturn [{ json: out }];"
+      },
+      "id": "511ac4f9-9e62-44ed-ad7f-eca2783caa0b",
+      "name": "Get Delivery Status",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -448,
+        288
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "c0",
+                    "leftValue": "={{ $json.status }}",
+                    "rightValue": "in_transit",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "in_transit"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "c1",
+                    "leftValue": "={{ $json.status }}",
+                    "rightValue": "delivered",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "delivered"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "c2",
+                    "leftValue": "={{ $json.status }}",
+                    "rightValue": "delayed",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "delayed"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "e1",
+                    "leftValue": "={{ $json.status }}",
+                    "rightValue": "lost",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  },
+                  {
+                    "id": "e2",
+                    "leftValue": "={{ $json.status }}",
+                    "rightValue": "damaged",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  },
+                  {
+                    "id": "e3",
+                    "leftValue": "={{ $json.status }}",
+                    "rightValue": "failed",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  },
+                  {
+                    "id": "e4",
+                    "leftValue": "={{ $json.status }}",
+                    "rightValue": "returned",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  },
+                  {
+                    "id": "e5",
+                    "leftValue": "={{ $json.status }}",
+                    "rightValue": "tracking_timeout",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "or"
+              },
+              "renameOutput": true,
+              "outputKey": "exception"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "Unknown"
+        }
+      },
+      "id": "b87d0c45-7848-4bf5-b34e-0e704d226a3f",
+      "name": "Route Delivery Status",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -224,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const trk = $('Get Tracking Number').item.json;\n\nreturn [{\n  json: {\n    order_id: $('Get Order').item.json.id,\n    status: 'in_transit',\n    shipment_id: trk.shipment_id,\n    tracking_number: trk.tracking_number,\n    carrier: trk.carrier,\n    delivery_check_number: $json.delivery_check_number,\n    ok: true\n  }\n}];"
+      },
+      "id": "0728d446-516a-472a-8e31-46bff3a6b68a",
+      "name": "Update Order In Transit",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// MOCK order update (delivered) for demo — replace with a real HTTP Request node later.\nconst trk = $('Get Tracking Number').item.json;\nreturn [{ json: {\n  order_id: $('Get Order').item.json.id,\n  status: 'delivered',\n  shipment_id: trk.shipment_id,\n  tracking_number: trk.tracking_number,\n  carrier: trk.carrier,\n  delivered_at: $json.delivered_at,\n  ok: true,\n} }];"
+      },
+      "id": "9df3880c-cbca-43f4-b129-847c82ab7566",
+      "name": "Update Order Delivered",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Get Order').item.json.customer.email }}",
+        "subject": "=Your order {{ $('Get Order').item.json.id }} was delivered",
+        "message": "=Hi {{ $('Get Order').item.json.customer.name }},<br><br>Great news — your order <b>{{ $('Get Order').item.json.id }}</b> has been delivered.<br>We hope you enjoy your purchase!<br><br>If anything is wrong with your order, just reply to this email and our team will help.",
+        "options": {}
+      },
+      "id": "915d6558-9f8e-41c7-9921-f3cd9c69f63b",
+      "name": "Notify Customer Delivered",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        224,
+        192
+      ],
+      "webhookId": "4d4a290b-0211-4286-82a7-2c7bb49ae117",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "Ut6jjW2BjWSiGWt6",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// DEMO reconciliation against a MOCK payment transaction — replace with a real payment lookup later.\nconst TOLERANCE = 0.01;\nconst EXPECTED_CURRENCY = 'EUR';\nconst order = $('Get Order').first().json;\nconst scenario = order.demo_scenario || 'normal';\nconst transaction = {\n  transaction_id: 'TXN-' + order.id,\n  status: order.payment_status,\n  captured_amount: scenario === 'payment_mismatch' ? 99.7 : Number(order.paid_amount),\n  currency: order.currency,\n};\nconst total = Number(order.total_amount);\nconst reasons = [];\nif (transaction.status !== 'paid') reasons.push('Payment status is ' + (transaction.status || 'missing') + ' (expected paid)');\nif (!Number.isFinite(transaction.captured_amount)) reasons.push('Paid amount missing');\nelse if (!Number.isFinite(total) || Math.abs(transaction.captured_amount - total) > TOLERANCE) reasons.push('Paid amount ' + transaction.captured_amount.toFixed(2) + ' does not match order total ' + (Number.isFinite(total) ? total.toFixed(2) : 'n/a'));\nif (transaction.currency !== EXPECTED_CURRENCY) reasons.push('Currency ' + (transaction.currency || 'missing') + ' (expected ' + EXPECTED_CURRENCY + ')');\nconst reconciled = reasons.length === 0;\nreturn [{ json: {\n  order_id: order.id,\n  transaction_id: transaction.transaction_id,\n  total_amount: order.total_amount,\n  paid_amount: transaction.captured_amount,\n  currency: transaction.currency,\n  payment_status: transaction.status,\n  reconciled,\n  discrepancyReason: reconciled ? null : reasons.join('; '),\n  note: reconciled ? 'Payment matches delivered order' : 'Payment/transaction inconsistency detected',\n} }];"
+      },
+      "id": "83a75ffd-c055-43bd-9338-cc0e4ef8c77f",
+      "name": "Reconcile Payment",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "rec",
+              "leftValue": "={{ $json.reconciled }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "2a416b7a-000b-4bea-a019-fe344693cdbc",
+      "name": "Is Payment Consistent",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        672,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "maya.zahrouni@gmail.com",
+        "subject": "=Payment inconsistency for order {{ $json.order_id }}",
+        "message": "=A payment/transaction inconsistency was detected during reconciliation.<br><br>Order: <b>{{ $json.order_id }}</b><br>Order total: {{ $json.total_amount }} {{ $json.currency }}<br>Paid amount: {{ $json.paid_amount }} {{ $json.currency }}<br>Payment status: {{ $json.payment_status }}<br>Reason: {{ $json.discrepancyReason }}<br><br>Please review manually.",
+        "options": {}
+      },
+      "id": "690b20db-6d55-414a-9b25-69e855690d51",
+      "name": "Notify Employee Inconsistency",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        896,
+        192
+      ],
+      "webhookId": "99c994b6-367f-44f5-85a6-e0f81c850212",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "Ut6jjW2BjWSiGWt6",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "zahrouni.maya@esprit.tn",
+        "subject": "=Manual review required — order {{ $('Get Order').item.json.id }}",
+        "message": "=A logistics case needs a human.<br><br>Order: <b>{{ $('Get Order').item.json.id }}</b><br>Customer: {{ $('Get Order').item.json.customer.email }}<br>Reason: {{ $json.labelIds ? \"Payment inconsistency: \" + $(\"Reconcile Payment\").item.json.discrepancyReason : $json.validationErrors && $json.validationErrors.length ? \"Order validation failed: \" + $json.validationErrors.join(\"; \") : $json.stockErrors && $json.stockErrors.length ? \"Stock unavailable: \" + $json.stockErrors.join(\"; \") : $json.warehouse_status ? \"Warehouse issue: \" + $json.warehouse_status : $json.discrepancyReason ? \"Payment inconsistency: \" + $json.discrepancyReason : $json.status ? \"Delivery status: \" + $json.status : \"see execution\" }}<br><br>Cases handled by a human: failed validation, duplicate order, stock unavailable, warehouse discrepancy / damaged / missing products, warehouse or tracking timeout, payment inconsistency, lost / damaged / failed / returned shipment, unknown status.",
+        "options": {}
+      },
+      "id": "ed93154d-abdb-43cf-bf4d-c3d5e3dbe4ef",
+      "name": "Escalate To Human",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        576
+      ],
+      "webhookId": "f88f2613-75b1-4a81-a9c9-89d9a656f96a",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "Ut6jjW2BjWSiGWt6",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const trk = $('Get Tracking Number').item.json;\n\nreturn [{\n  json: {\n    order_id: $('Get Order').item.json.id,\n    status: 'delayed',\n    shipment_id: trk.shipment_id,\n    tracking_number: trk.tracking_number,\n    carrier: trk.carrier,\n    delivery_check_number: $json.delivery_check_number,\n    ok: true\n  }\n}];"
+      },
+      "id": "89cabc4f-00e8-4cc2-9f7a-4275f507c30f",
+      "name": "Update Order Delayed",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Get Order').item.json.customer.email }}",
+        "subject": "=Update on your order {{ $('Get Order').item.json.id }}",
+        "message": "=Hi {{ $('Get Order').item.json.customer.name }},<br><br>We wanted to let you know your order <b>{{ $('Get Order').item.json.id }}</b> is experiencing a delivery delay. We're on it and will keep you posted.<br><br>Thank you for your patience.",
+        "options": {}
+      },
+      "id": "3dc5eb72-04ec-44e4-aa8c-8dac2416408a",
+      "name": "Notify Customer Delayed",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        224,
+        384
+      ],
+      "webhookId": "3a1c9858-3c2d-48d2-8932-476956d73ddc",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "Ut6jjW2BjWSiGWt6",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Order Ready For Shipment": {
+      "main": [
+        [
+          {
+            "node": "Get Order",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Order": {
+      "main": [
+        [
+          {
+            "node": "Validate Order",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Test Manually": {
+      "main": [
+        [
+          {
+            "node": "Get Order",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Order": {
+      "main": [
+        [
+          {
+            "node": "Check Duplicate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Duplicate": {
+      "main": [
+        [
+          {
+            "node": "Is Order Valid",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Order Valid": {
+      "main": [
+        [
+          {
+            "node": "Send Order To Inventory & Warehouse",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Escalate To Human",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Order To Inventory & Warehouse": {
+      "main": [
+        [
+          {
+            "node": "Check Stock",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Stock": {
+      "main": [
+        [
+          {
+            "node": "Is Stock Available",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Stock Available": {
+      "main": [
+        [
+          {
+            "node": "Reserve Stock",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Escalate To Human",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reserve Stock": {
+      "main": [
+        [
+          {
+            "node": "Update Inventory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Inventory": {
+      "main": [
+        [
+          {
+            "node": "Update Product Availability",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Product Availability": {
+      "main": [
+        [
+          {
+            "node": "Create Warehouse Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Warehouse Task": {
+      "main": [
+        [
+          {
+            "node": "Wait For Warehouse Update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait For Warehouse Update": {
+      "main": [
+        [
+          {
+            "node": "Check Warehouse Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Warehouse Status": {
+      "main": [
+        [
+          {
+            "node": "Route Warehouse Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Warehouse Status": {
+      "main": [
+        [
+          {
+            "node": "Create Shipment",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait For Warehouse Update",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Escalate To Human",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Escalate To Human",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Shipment": {
+      "main": [
+        [
+          {
+            "node": "Get Tracking Number",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Tracking Number": {
+      "main": [
+        [
+          {
+            "node": "Update Order Shipped",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Order Shipped": {
+      "main": [
+        [
+          {
+            "node": "Notify Customer Shipped",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify Customer Shipped": {
+      "main": [
+        [
+          {
+            "node": "Wait Before Status Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait Before Status Check": {
+      "main": [
+        [
+          {
+            "node": "Get Delivery Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Delivery Status": {
+      "main": [
+        [
+          {
+            "node": "Route Delivery Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Delivery Status": {
+      "main": [
+        [
+          {
+            "node": "Update Order In Transit",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update Order Delivered",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update Order Delayed",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Escalate To Human",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Escalate To Human",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Order In Transit": {
+      "main": [
+        [
+          {
+            "node": "Wait Before Status Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Order Delivered": {
+      "main": [
+        [
+          {
+            "node": "Notify Customer Delivered",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify Customer Delivered": {
+      "main": [
+        [
+          {
+            "node": "Reconcile Payment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reconcile Payment": {
+      "main": [
+        [
+          {
+            "node": "Is Payment Consistent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Payment Consistent": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Notify Employee Inconsistency",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify Employee Inconsistency": {
+      "main": [
+        [
+          {
+            "node": "Escalate To Human",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Order Delayed": {
+      "main": [
+        [
+          {
+            "node": "Notify Customer Delayed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify Customer Delayed": {
+      "main": [
+        [
+          {
+            "node": "Wait Before Status Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "abd801cd-f841-4ffe-835e-b79111a2ec32",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "dc98d7aaebc189f05af87aefd497d61491eacbc26399dc8e6f9eeacd5e5810fa"
+  },
+  "nodeGroups": [
+    {
+      "id": "fa9287e8-ce3b-4d53-b2fd-05a6ef98caed",
+      "name": "Validate order",
+      "nodeIds": [
+        "17b6ca97-f41f-4eb5-971f-3aacf974d6c1",
+        "fa76db09-d4f5-452c-8a8f-cdb7904e3c55",
+        "e024739e-c7a8-4757-8747-832eda3c28cd",
+        "7cdf6210-90ef-4826-9eda-9e9ac23adda8"
+      ],
+      "description": "Checks order status, products, totals, payment and duplicates; any failure goes to a human."
+    },
+    {
+      "id": "a8a036e3-ef75-445d-9f5c-957eabf864b2",
+      "name": "Confirm stock availability",
+      "nodeIds": [
+        "bf33ab4b-dd4e-4db3-977b-f4324196f38f",
+        "47e3b0c2-fc73-467a-9e11-a0aa3e6460d5",
+        "a5add4f4-1a38-4608-a5a4-ca6b892941ec"
+      ],
+      "description": "Hands the order to Inventory & Warehouse and checks each item against mock stock levels."
+    },
+    {
+      "id": "299dd0e0-5a79-4a02-a759-a97b9683b7c3",
+      "name": "Prepare order in warehouse",
+      "nodeIds": [
+        "36e4f874-9422-45ec-ada9-bd5ba9c9e521",
+        "8b02e0f2-d681-423a-8cf2-43e8164b6f53",
+        "819994fb-7600-45f8-b946-7823e3345e32",
+        "a3e5c16a-18e0-4260-b5b3-18e0146eda58",
+        "4e6f1680-25ee-4969-bd5e-96afd21fefb7",
+        "39406eed-ca64-421b-bc96-fa481bc9d8db",
+        "f759999f-fb82-4f30-8b4a-7a3a124eaa49"
+      ],
+      "description": "Reserves stock, updates inventory, opens a task for staff to pick, verify and pack, then waits for ready (max 5 checks)."
+    },
+    {
+      "id": "3f6b0f30-db55-4dd1-a3aa-6ca69a377354",
+      "name": "Ship & track delivery",
+      "nodeIds": [
+        "f76dc116-dd40-493e-a969-fa65c2b91f8e",
+        "c4d8b3ea-ae52-4b6f-ad49-8b9439629220",
+        "a4574cc9-03f5-4e6e-850e-22b07e62cba7",
+        "262aa57c-634b-4638-b692-c426fc538e8e",
+        "bc2dd185-a20a-462d-b125-2af606ce7d0c",
+        "511ac4f9-9e62-44ed-ad7f-eca2783caa0b",
+        "b87d0c45-7848-4bf5-b34e-0e704d226a3f",
+        "0728d446-516a-472a-8e31-46bff3a6b68a",
+        "89cabc4f-00e8-4cc2-9f7a-4275f507c30f",
+        "3dc5eb72-04ec-44e4-aa8c-8dac2416408a"
+      ],
+      "description": "Polls the courier every 5s (max 5 checks); in-transit and delayed re-check, delivered, exceptions and timeout leave the loop."
+    },
+    {
+      "id": "70ae7f4e-bf40-4a4f-8d36-2f9de8345565",
+      "name": "Confirm delivery & reconcile",
+      "nodeIds": [
+        "9df3880c-cbca-43f4-b129-847c82ab7566",
+        "915d6558-9f8e-41c7-9921-f3cd9c69f63b",
+        "83a75ffd-c055-43bd-9338-cc0e4ef8c77f",
+        "2a416b7a-000b-4bea-a019-fe344693cdbc",
+        "690b20db-6d55-414a-9b25-69e855690d51"
+      ],
+      "description": "On delivery, marks the order delivered, notifies the customer, reconciles payment and alerts finance on any mismatch."
+    }
+  ],
+  "id": "PHDSSZiFazqbFcZV",
+  "tags": []
+}

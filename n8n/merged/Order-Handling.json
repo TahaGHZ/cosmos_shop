@@ -1,0 +1,898 @@
+{
+  "name": "Order Handling — New Shop Workflow",
+  "nodes": [
+    {
+      "id": "03f10f7b-b83b-4be1-8737-a5d5ee0ef39a",
+      "name": "OH Receive Order Event",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "larkspur-order-handling",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "f71cc3d7-d735-4972-9e9d-b66a308e659f"
+    },
+    {
+      "id": "945bdf15-1877-4476-bf8c-2a3769c3b083",
+      "name": "OH Configuration",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "parameters": {
+        "jsCode": "const event=$input.first().json.body||{};\nif(!event.order_id && !event.order?.id) return [];\nif(event.type && !['order.created','order.validated','order.confirmed','order.cancelled','order.shipped','shipment.updated','payment.reconciled','inventory.reserved','warehouse.ready','warehouse.updated','order.review_required'].includes(event.type))return [];\nreturn [{json:{event,orderId:String(event.order_id||event.order.id),shopBaseUrl:'http://host.docker.internal:3000',logisticsWebhookUrl:'SET_LOGISTICS_PRODUCTION_WEBHOOK_URL'}}];"
+      },
+      "position": [
+        240,
+        0
+      ]
+    },
+    {
+      "id": "03a6e648-1a2e-4e3b-a9af-8c6829279145",
+      "name": "OH Get Live Order",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('OH Configuration').first().json.shopBaseUrl + '/api/automation/orders/' + encodeURIComponent($('OH Configuration').first().json.orderId) }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "position": [
+        480,
+        0
+      ]
+    },
+    {
+      "id": "58e723e6-bd63-406e-9b4c-2db93d24dd06",
+      "name": "OH Decide",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "parameters": {
+        "jsCode": "const o=$input.first().json;const event=$('OH Configuration').first().json.event;let handlerAction='sync';if(o.processing_status==='received'&&(!event.type||event.type==='order.created'))handlerAction='validate';if(o.processing_status==='confirmed'&&event.type==='order.confirmed'&&!o.logisticsHandoff?.acceptedAt)handlerAction='handoff';return [{json:{...o,handlerAction}}];"
+      },
+      "position": [
+        720,
+        0
+      ]
+    },
+    {
+      "id": "4d17cc48-2825-466b-81bc-8d28c8377539",
+      "name": "OH Sync Lookup Table",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "parameters": {
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "value": "UlO9eefMNEtKxNQV",
+          "mode": "list",
+          "cachedResultName": "order",
+          "cachedResultUrl": "/projects/OVbqhMM15DSm48Kn/datatables/UlO9eefMNEtKxNQV"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "order_id",
+              "keyValue": "={{ $('OH Decide').first().json.id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "order_id": "={{ $('OH Decide').first().json.id }}",
+            "customer_email": "={{ $('OH Decide').first().json.customer.email }}",
+            "status": "={{ $('OH Decide').first().json.processing_status || $('OH Decide').first().json.status }}",
+            "tracking_number": "={{ $('OH Decide').first().json.tracking_number || '' }}",
+            "estimated_delivery": "={{ $('OH Decide').first().json.estimated_delivery || '' }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "order_id",
+              "displayName": "order_id",
+              "type": "string",
+              "required": false,
+              "display": true,
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "customer_email",
+              "displayName": "customer_email",
+              "type": "string",
+              "required": false,
+              "display": true,
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "type": "string",
+              "required": false,
+              "display": true,
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "tracking_number",
+              "displayName": "tracking_number",
+              "type": "string",
+              "required": false,
+              "display": true,
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "estimated_delivery",
+              "displayName": "estimated_delivery",
+              "type": "string",
+              "required": false,
+              "display": true,
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "position": [
+        960,
+        0
+      ]
+    },
+    {
+      "id": "cb871c83-04b3-4dbf-b267-829044e652b2",
+      "name": "OH Route Event",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "dc197960-0380-469c-8f71-a116fbd8f519",
+                    "leftValue": "={{ $('OH Decide').first().json.handlerAction }}",
+                    "rightValue": "validate",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "validate"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "336c97dc-3787-4566-ac22-3522b57e159a",
+                    "leftValue": "={{ $('OH Decide').first().json.handlerAction }}",
+                    "rightValue": "handoff",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "handoff"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "position": [
+        1200,
+        0
+      ]
+    },
+    {
+      "id": "bacad543-d43c-48fa-b140-c959b5d1a8da",
+      "name": "OH Validate Customer Payment Totals",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "parameters": {
+        "jsCode": "const o=$('OH Decide').first().json;const errors=[];if(!o.customer?.name||! /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(o.customer?.email||''))errors.push('Customer details missing');if(!o.shipping_address?.street||!o.shipping_address?.city||!o.shipping_address?.postal_code||!o.shipping_address?.country)errors.push('Complete shipping address required');if(!Array.isArray(o.products)||!o.products.length)errors.push('No products');for(const p of o.products||[])if(!p.sku||!Number.isInteger(p.qty)||p.qty<1||!Number.isFinite(p.price)||p.price<0)errors.push('Invalid item: '+(p.sku||'unknown'));const total=(o.products||[]).reduce((s,p)=>s+p.qty*p.price,0)+Number(o.shipping_amount||0);if(!Number.isFinite(total)||Math.abs(total-o.total_amount)>.01)errors.push('Total does not match items and shipping');if(o.payment_status!=='paid'||Math.abs(o.paid_amount-o.total_amount)>.01)errors.push('Payment requires human review');return [{json:{order_id:o.id,valid:errors.length===0,errors}}];"
+      },
+      "position": [
+        1440,
+        0
+      ]
+    },
+    {
+      "id": "78958b28-ac03-430f-b55b-d2d42b371a2d",
+      "name": "OH Is Valid",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "a77495b2-d696-4a49-b544-82fc2a641bab",
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "position": [
+        1680,
+        0
+      ]
+    },
+    {
+      "id": "e8ffc204-4720-461c-af07-3a90587710a3",
+      "name": "OH Check Stock",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('OH Configuration').first().json.shopBaseUrl + '/api/automation/orders/' + encodeURIComponent($('OH Configuration').first().json.orderId) + '/stock' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "position": [
+        1920,
+        0
+      ]
+    },
+    {
+      "id": "79c3d2ce-539a-46a7-b565-b751d80a4306",
+      "name": "OH Stock Available",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "d4d74831-dc92-4f58-85b4-44911c2af0c3",
+              "leftValue": "={{ $json.stockAvailable }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "position": [
+        2160,
+        0
+      ]
+    },
+    {
+      "id": "bdbe0995-844d-4433-9c17-b6e9ba3e84ea",
+      "name": "OH After Stock",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "6a9d2583-1c45-49c7-a900-1dde9c53a595",
+                    "leftValue": "={{ $('OH Decide').first().json.handlerAction }}",
+                    "rightValue": "validate",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "validate"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "ac019b5c-a14c-4649-9c19-c36fb0ac4534",
+                    "leftValue": "={{ $('OH Decide').first().json.handlerAction }}",
+                    "rightValue": "handoff",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "handoff"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "position": [
+        2400,
+        0
+      ]
+    },
+    {
+      "id": "d15f4299-afdd-4a0f-b99e-32006cdb7f6f",
+      "name": "OH Set Awaiting Confirmation",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('OH Configuration').first().json.shopBaseUrl + '/api/automation/orders/' + encodeURIComponent($('OH Configuration').first().json.orderId) + '/validate' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{}",
+        "options": {}
+      },
+      "position": [
+        2640,
+        -150
+      ]
+    },
+    {
+      "id": "846018f5-55f2-4021-a0cc-1272f3c9a76a",
+      "name": "OH Sync Confirmation State",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "parameters": {
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "value": "UlO9eefMNEtKxNQV",
+          "mode": "list",
+          "cachedResultName": "order",
+          "cachedResultUrl": "/projects/OVbqhMM15DSm48Kn/datatables/UlO9eefMNEtKxNQV"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "order_id",
+              "keyValue": "={{ $('OH Set Awaiting Confirmation').first().json.id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "order_id": "={{ $('OH Set Awaiting Confirmation').first().json.id }}",
+            "customer_email": "={{ $('OH Set Awaiting Confirmation').first().json.customer.email }}",
+            "status": "={{ $('OH Set Awaiting Confirmation').first().json.processing_status || $('OH Set Awaiting Confirmation').first().json.status }}",
+            "tracking_number": "={{ $('OH Set Awaiting Confirmation').first().json.tracking_number || '' }}",
+            "estimated_delivery": "={{ $('OH Set Awaiting Confirmation').first().json.estimated_delivery || '' }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "order_id",
+              "displayName": "order_id",
+              "type": "string",
+              "required": false,
+              "display": true,
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "customer_email",
+              "displayName": "customer_email",
+              "type": "string",
+              "required": false,
+              "display": true,
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "type": "string",
+              "required": false,
+              "display": true,
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "tracking_number",
+              "displayName": "tracking_number",
+              "type": "string",
+              "required": false,
+              "display": true,
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "estimated_delivery",
+              "displayName": "estimated_delivery",
+              "type": "string",
+              "required": false,
+              "display": true,
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "position": [
+        2880,
+        -150
+      ]
+    },
+    {
+      "id": "78dc065a-47bc-4ca5-a321-faa1c309dfd8",
+      "name": "OH Send Confirmation Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "parameters": {
+        "sendTo": "={{ $('OH Set Awaiting Confirmation').first().json.customer.email }}",
+        "subject": "=Confirm your order {{ $('OH Set Awaiting Confirmation').first().json.id }}",
+        "message": "=Hi {{ $('OH Set Awaiting Confirmation').first().json.customer.name }},<br>Please confirm your order <b>{{ $('OH Set Awaiting Confirmation').first().json.id }}</b>.<br><a href=\"{{ $('OH Set Awaiting Confirmation').first().json.confirmation_url }}\">Confirm my order</a><br>Items: {{ $('OH Set Awaiting Confirmation').first().json.products.map(p => p.qty + ' × ' + p.name).join(', ') }}<br>Total: {{ $('OH Set Awaiting Confirmation').first().json.total_amount }} EUR",
+        "options": {}
+      },
+      "position": [
+        3120,
+        -150
+      ],
+      "disabled": true
+    },
+    {
+      "id": "77839585-7560-47e0-a6ed-4e9ffdc3733b",
+      "name": "OH Hand Off To Original Logistics",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('OH Configuration').first().json.logisticsWebhookUrl }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({order_id: $('OH Configuration').first().json.orderId, order: $('OH Get Live Order').first().json, demo_scenario: 'normal', source_event_id: $('OH Configuration').first().json.event.id || null}) }}",
+        "options": {}
+      },
+      "position": [
+        2640,
+        180
+      ]
+    },
+    {
+      "id": "d6117b76-b513-4756-a804-19d366cd710e",
+      "name": "OH Record Accepted Handoff",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('OH Configuration').first().json.shopBaseUrl + '/api/automation/orders/' + encodeURIComponent($('OH Configuration').first().json.orderId) + '/handoff-record' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({eventId: $('OH Configuration').first().json.event.id || null}) }}",
+        "options": {}
+      },
+      "position": [
+        2880,
+        180
+      ]
+    },
+    {
+      "id": "d4f5d448-317b-49c7-8d77-3b936b2962d5",
+      "name": "OH Request Human Review",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('OH Configuration').first().json.shopBaseUrl + '/api/automation/orders/' + encodeURIComponent($('OH Configuration').first().json.orderId) + '/escalate' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({reason: $json.errors?.join('; ') || $json.stockErrors?.join('; ') || 'Order needs human review'}) }}",
+        "options": {}
+      },
+      "position": [
+        2160,
+        450
+      ]
+    },
+    {
+      "id": "65781731-9b33-4c50-937e-e240b053f25d",
+      "name": "OH Check Unanswered Confirmations",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 1
+            }
+          ]
+        }
+      },
+      "position": [
+        0,
+        900
+      ]
+    },
+    {
+      "id": "02311c55-fdb6-45e1-a0e9-a5bfb293ec77",
+      "name": "OH Followup Configuration",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "parameters": {
+        "jsCode": "return [{json:{shopBaseUrl:'http://host.docker.internal:3000',remindAfterHours:24,reviewAfterHours:72}}];"
+      },
+      "position": [
+        240,
+        900
+      ]
+    },
+    {
+      "id": "65d97dee-47ac-4ff0-a12f-f253ccd829dd",
+      "name": "OH List Pending Orders",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('OH Followup Configuration').first().json.shopBaseUrl + '/api/orders' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "position": [
+        480,
+        900
+      ]
+    },
+    {
+      "id": "59a0fe78-4c9a-4cfd-9e74-cfd6c15b2c74",
+      "name": "OH Choose Due Followups",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "parameters": {
+        "jsCode": "const cfg=$('OH Followup Configuration').first().json;const orders=$input.all().flatMap(i=>Array.isArray(i.json)?i.json:[i.json]);return orders.filter(o=>o.status==='awaiting_confirmation').flatMap(o=>{const hours=(Date.now()-Date.parse(o.createdAt))/3600000;if(hours>=cfg.reviewAfterHours){if(o.reviewReason==='Customer has not confirmed within '+cfg.reviewAfterHours+' hours')return [];return [{json:{id:o.id,action:'escalate',body:{reason:'Customer has not confirmed within '+cfg.reviewAfterHours+' hours'}}}];}if(hours>=cfg.remindAfterHours&&(!o.lastReminderAt||Date.now()-Date.parse(o.lastReminderAt)>=86400000))return [{json:{id:o.id,action:'remind',body:{}}}];return [];});"
+      },
+      "position": [
+        720,
+        900
+      ]
+    },
+    {
+      "id": "4e9f5e9d-7160-4350-886c-6b8a464437ec",
+      "name": "OH Apply Followup",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('OH Followup Configuration').first().json.shopBaseUrl + '/api/automation/orders/' + encodeURIComponent($json.id) + '/' + $json.action }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {}
+      },
+      "position": [
+        960,
+        900
+      ]
+    },
+    {
+      "id": "6ed5b79c-8767-427a-8c99-84ea73203a84",
+      "name": "OH Read Me",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "parameters": {
+        "content": "# NEW: Order handling\nReceive → live lookup / duplicate guards → sync existing lookup table → validate customer/payment/totals → check stock → confirmation → confirmed handoff. Hourly follow-up creates a demo reminder after 24h or human review after 72h.\n\nConfigure both OH config nodes, the new HTTP credentials, and the lookup-table binding. Real confirmation email is disabled until configured.\n\nThe original Logistics code remains mock-based by request. Its HTTP acceptance is not proof of actual fulfillment.\n\nSee MERGE-README.md.",
+        "width": 1100,
+        "height": 420
+      },
+      "position": [
+        0,
+        -600
+      ]
+    }
+  ],
+  "connections": {
+    "OH Receive Order Event": {
+      "main": [
+        [
+          {
+            "node": "OH Configuration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OH Configuration": {
+      "main": [
+        [
+          {
+            "node": "OH Get Live Order",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OH Get Live Order": {
+      "main": [
+        [
+          {
+            "node": "OH Decide",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OH Decide": {
+      "main": [
+        [
+          {
+            "node": "OH Sync Lookup Table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OH Sync Lookup Table": {
+      "main": [
+        [
+          {
+            "node": "OH Route Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OH Route Event": {
+      "main": [
+        [
+          {
+            "node": "OH Validate Customer Payment Totals",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "OH Check Stock",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OH Validate Customer Payment Totals": {
+      "main": [
+        [
+          {
+            "node": "OH Is Valid",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OH Is Valid": {
+      "main": [
+        [
+          {
+            "node": "OH Check Stock",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "OH Request Human Review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OH Check Stock": {
+      "main": [
+        [
+          {
+            "node": "OH Stock Available",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OH Stock Available": {
+      "main": [
+        [
+          {
+            "node": "OH After Stock",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "OH Request Human Review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OH After Stock": {
+      "main": [
+        [
+          {
+            "node": "OH Set Awaiting Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "OH Hand Off To Original Logistics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OH Set Awaiting Confirmation": {
+      "main": [
+        [
+          {
+            "node": "OH Sync Confirmation State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OH Sync Confirmation State": {
+      "main": [
+        [
+          {
+            "node": "OH Send Confirmation Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OH Hand Off To Original Logistics": {
+      "main": [
+        [
+          {
+            "node": "OH Record Accepted Handoff",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OH Check Unanswered Confirmations": {
+      "main": [
+        [
+          {
+            "node": "OH Followup Configuration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OH Followup Configuration": {
+      "main": [
+        [
+          {
+            "node": "OH List Pending Orders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OH List Pending Orders": {
+      "main": [
+        [
+          {
+            "node": "OH Choose Due Followups",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OH Choose Due Followups": {
+      "main": [
+        [
+          {
+            "node": "OH Apply Followup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "active": false
+}

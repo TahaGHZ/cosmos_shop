@@ -1,0 +1,8 @@
+{
+  "name": "larkspur-automation-shop",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": { "start": "node server.js", "team:start": "node scripts/team-setup.js --start", "team:configure": "node scripts/team-setup.js", "test": "node --test tests/*.test.js", "prepare:workflows": "node scripts/prepare-workflows.js", "merge:workflows": "node scripts/merge-original-workflows.js" },
+  "engines": { "node": ">=22" }
+}

@@ -1,0 +1,136 @@
+# 1. Order Processing
+
+### Before automation
+
+* Receive order.
+* Check customer information.
+* Check product and quantity.
+* Check payment.
+* Check stock.
+* Update order status.
+* Pass order to next step.
+
+### After automation with n8n
+
+* Receive order.
+* Validate information.
+* Check payment.
+* Check stock.
+* Create/update order.
+* Update status.
+* Send order to confirmation.
+
+### Human needed
+
+* Payment problems.
+* Missing or incorrect information.
+* Exceptional orders.
+
+---
+
+# 2. Customer Confirmation
+
+### Before automation
+
+* Contact customer.
+* Confirm product and quantity.
+* Confirm address.
+* Confirm payment method.
+* Record response.
+* Update order.
+
+### After automation with n8n
+
+* Send confirmation email.
+* Customer confirms through the provided link.
+* Update confirmation status.
+* Continue workflow.
+* Send reminder if necessary.
+* Handle rejection or no response.
+
+### Human needed
+
+* Customer disputes the order.
+* Customer requests an unusual change.
+* Automated confirmation fails.
+
+---
+
+# 3. Inventory & Warehouse
+
+### Before automation
+
+* Check stock.
+* Reserve stock.
+* Update stock quantity.
+* Update product availability.
+* Send order to warehouse.
+* Pick products.
+* Verify products.
+* Package order.
+* Mark order ready.
+
+### After automation with n8n
+
+* Check stock automatically.
+* Reserve/deduct stock.
+* Update inventory.
+* Update availability.
+* Create warehouse task.
+* Update warehouse status after completion.
+
+### Human needed
+
+* Pick products.
+* Verify products.
+* Package products.
+* Handle physical stock discrepancies.
+* Handle damaged/missing products.
+
+---
+
+# 4. Logistics & Delivery
+
+### Before automation
+
+* Enter customer information into courier system.
+* Create shipment.
+* Copy tracking number.
+* Update order.
+* Send tracking information.
+* Check delivery status.
+* Update customer.
+
+### After automation with n8n
+
+* Create shipment.
+* Retrieve tracking number.
+* Update order.
+* Send tracking information.
+* Monitor delivery status.
+* Update order automatically.
+* Send delivery notifications.
+
+### Human needed
+
+* Failed delivery.
+* Incorrect address.
+* Lost/damaged package.
+* Delivery disputes.
+
+---
+
+# Division
+
+* Person 1 — Order Processing
+* Person 2 — Customer Confirmation
+* Person 3 — Inventory & Warehouse
+* Person 4 — Logistics & Delivery
+
+### Each person prepares
+
+* Current manual process.
+* Problems and repetitive tasks.
+* Automated n8n process.
+* Human intervention points.
+* n8n workflow.
