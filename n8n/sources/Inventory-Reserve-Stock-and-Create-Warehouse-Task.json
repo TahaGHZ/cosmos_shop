@@ -1,0 +1,452 @@
+{
+  "name": "Inventory - Reserve Stock and Create Warehouse Task",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "warehouse/new-order",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -1120,
+        128
+      ],
+      "id": "00b45b26-fba9-44ba-8f12-d2f83cc2325a",
+      "name": "Webhook",
+      "webhookId": "warehouse-new-order"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "body.items",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -896,
+        128
+      ],
+      "id": "aee6bf3a-2892-4cc9-b4c8-b618dabb45cb",
+      "name": "Split Out Items"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "lmpjHkTn940uIvwW",
+          "mode": "list",
+          "cachedResultName": "products",
+          "cachedResultUrl": "/projects/loSjyB32wXFKsH2b/datatables/lmpjHkTn940uIvwW"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "sku",
+              "keyValue": "={{ $json.sku }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -672,
+        128
+      ],
+      "id": "d1ffbabf-1627-4a09-9609-f0c592be43bb",
+      "name": "Get Product",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const lines = $('Split Out Items').all().map(i => i.json);\nconst rows = $input.all().map(i => i.json);\n\nconst out = lines.map(l => {\n  const p = rows.find(r => r.sku === l.sku) || {};\n  const qty = Number(l.qty);\n  const available = Number(p.available ?? 0);\n  const reserved = Number(p.reserved ?? 0);\n  return { sku: l.sku, qty, reserved, available, ok: !!p.sku && available >= qty };\n});\n\nconst all_ok = out.every(o => o.ok);\nreturn out.map(o => ({ json: { ...o, all_ok } }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -448,
+        128
+      ],
+      "id": "f46e00f7-eb0b-48bb-a438-e4399b95147a",
+      "name": "Check Stock"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "c1000000-0000-4000-8000-000000000001",
+              "leftValue": "={{ $json.all_ok }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -224,
+        128
+      ],
+      "id": "a49176fc-b5fe-4d1e-9fdf-98220f7ad73e",
+      "name": "Enough Stock?"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "lmpjHkTn940uIvwW",
+          "mode": "list",
+          "cachedResultName": "products",
+          "cachedResultUrl": "/projects/loSjyB32wXFKsH2b/datatables/lmpjHkTn940uIvwW"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "sku",
+              "keyValue": "={{ $json.sku }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "reserved": "={{ $json.reserved + $json.qty }}",
+            "available": "={{ $json.available - $json.qty }}",
+            "status": "={{ ($json.available - $json.qty) <= 0 ? 'Out of stock' : 'In stock' }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "sku",
+              "displayName": "sku",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "stock_on_hand",
+              "displayName": "stock_on_hand",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "reserved",
+              "displayName": "reserved",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "available",
+              "displayName": "available",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "reorder_level",
+              "displayName": "reorder_level",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "6afb5c24-6605-4c9f-a551-8af0c24ae0ef",
+      "name": "Reserve Stock"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "HmbPSQiP8uLJwLvu",
+          "mode": "list",
+          "cachedResultName": "warehouse_tasks",
+          "cachedResultUrl": "/projects/loSjyB32wXFKsH2b/datatables/HmbPSQiP8uLJwLvu"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "task_id": "={{ 'TASK-' + $('Webhook').first().json.body.order_id }}",
+            "order_id": "={{ $('Webhook').first().json.body.order_id }}",
+            "items": "={{ JSON.stringify($('Webhook').first().json.body.items) }}",
+            "status": "To Pick"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "task_id",
+              "displayName": "task_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "order_id",
+              "displayName": "order_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "items",
+              "displayName": "items",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "assigned_to",
+              "displayName": "assigned_to",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "issue",
+              "displayName": "issue",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        224,
+        0
+      ],
+      "id": "e685b350-e405-4784-9bb6-6cb219f4a465",
+      "name": "Create Warehouse Task",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"order_id\": $('Webhook').first().json.body.order_id, \"status\": \"reserved\", \"task_id\": $json.task_id } }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        448,
+        0
+      ],
+      "id": "ea2ebd80-3329-4a96-8383-afaf02e473a3",
+      "name": "Respond Reserved",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"order_id\": $('Webhook').first().json.body.order_id, \"status\": \"stock_issue\", \"details\": $('Check Stock').all().map(i => i.json).filter(i => !i.ok).map(i => i.sku) } }}",
+        "options": {
+          "responseCode": 409
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        240
+      ],
+      "id": "fc173e92-baed-4cd5-8a09-eb16fc367130",
+      "name": "Respond Stock Issue",
+      "executeOnce": true
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Split Out Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out Items": {
+      "main": [
+        [
+          {
+            "node": "Get Product",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Product": {
+      "main": [
+        [
+          {
+            "node": "Check Stock",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Stock": {
+      "main": [
+        [
+          {
+            "node": "Enough Stock?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enough Stock?": {
+      "main": [
+        [
+          {
+            "node": "Reserve Stock",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Stock Issue",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reserve Stock": {
+      "main": [
+        [
+          {
+            "node": "Create Warehouse Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Warehouse Task": {
+      "main": [
+        [
+          {
+            "node": "Respond Reserved",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "b38fc9dc-e5aa-40cf-87dc-98dd11b3d372",
+  "meta": {
+    "instanceId": "1aecd49c7a370e1b345e7702590579677d111e692ff0022d0d244579b9d4acbe"
+  },
+  "nodeGroups": [],
+  "id": "bcZUApYaN99CmQCL",
+  "tags": []
+}

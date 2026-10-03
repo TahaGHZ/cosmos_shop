@@ -1,5 +1,5 @@
 {
-  "name": "Cosmos-Ecommerce-Inventory-Overlay",
+  "name": "Cosmos Ecommerce — Orders + Logistics (shop API)",
   "nodes": [
     {
       "parameters": {
@@ -15,18 +15,12 @@
       "type": "n8n-nodes-base.gmailTrigger",
       "typeVersion": 1.4,
       "position": [
-        -2496,
-        -256
+        -2816,
+        128
       ],
       "id": "73089eaa-dd61-4d23-a201-9a8394e17bf9",
       "name": "Gmail Trigger",
-      "disabled": true,
-      "credentials": {
-        "gmailOAuth2": {
-          "id": "bCttfsOZADrG4VWx",
-          "name": "Gmail account"
-        }
-      }
+      "disabled": true
     },
     {
       "parameters": {
@@ -34,8 +28,7 @@
           "__rl": true,
           "value": "models/gemini-3.1-flash-lite",
           "mode": "list",
-          "cachedResultName": "models/gemini-3.1-flash-lite",
-          "cachedResultUrl": ""
+          "cachedResultName": "models/gemini-3.1-flash-lite"
         },
         "messages": {
           "values": [
@@ -51,20 +44,14 @@
       "type": "@n8n/n8n-nodes-langchain.googleGemini",
       "typeVersion": 1.2,
       "position": [
-        -16,
-        -400
+        -1824,
+        160
       ],
       "id": "6923bade-c707-4ef9-8d5e-0fac3d6ef62b",
       "name": "Message a model",
       "retryOnFail": true,
       "waitBetweenTries": 2000,
-      "disabled": true,
-      "credentials": {
-        "googlePalmApi": {
-          "id": "SHyV5aSoOEktnfvG",
-          "name": "Google Gemini(PaLM) Api account"
-        }
-      }
+      "disabled": true
     },
     {
       "parameters": {
@@ -214,8 +201,8 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.4,
       "position": [
-        2336,
-        -304
+        -1040,
+        112
       ],
       "id": "76b909c8-dc47-456f-905e-8071f6da6fc7",
       "name": "Switch"
@@ -231,8 +218,8 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
-        2544,
-        -320
+        -832,
+        96
       ],
       "id": "99d9cb59-6ea7-4ec0-90e1-be8f5eade337",
       "name": "AI Agent"
@@ -245,15 +232,16 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
       "typeVersion": 1.1,
       "position": [
-        2464,
-        -32
+        -912,
+        384
       ],
       "id": "83d6f67e-4aaf-4392-ad03-2e90dde70415",
       "name": "Google Gemini Chat Model",
       "credentials": {
         "googlePalmApi": {
-          "id": "SHyV5aSoOEktnfvG",
-          "name": "Google Gemini(PaLM) Api account"
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
         }
       }
     },
@@ -269,8 +257,8 @@
       "type": "@n8n/n8n-nodes-langchain.vectorStoreInMemory",
       "typeVersion": 1.3,
       "position": [
-        4336,
-        -160
+        960,
+        256
       ],
       "id": "e4210dc8-00d4-4f18-b0fe-9a55b24f9ac7",
       "name": "Simple Vector Store"
@@ -290,18 +278,12 @@
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
       "position": [
-        3840,
-        -160
+        464,
+        256
       ],
       "id": "1769ae9c-45df-4088-b22f-a883bd983882",
       "name": "Download file",
-      "disabled": true,
-      "credentials": {
-        "googleDriveOAuth2Api": {
-          "id": "LiKqgsKlPH38HCBu",
-          "name": "Google Drive account"
-        }
-      }
+      "disabled": true
     },
     {
       "parameters": {
@@ -311,8 +293,8 @@
       "type": "n8n-nodes-base.extractFromFile",
       "typeVersion": 1.1,
       "position": [
-        4064,
-        -160
+        688,
+        256
       ],
       "id": "ff499d68-7743-46ab-8a8f-8ac1ac7112cd",
       "name": "Extract from File"
@@ -324,8 +306,8 @@
       "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
       "typeVersion": 1.1,
       "position": [
-        4480,
-        48
+        1104,
+        464
       ],
       "id": "80730892-b995-4ed8-bf23-676f50555261",
       "name": "Default Data Loader1"
@@ -335,18 +317,12 @@
       "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
       "typeVersion": 1,
       "position": [
-        4256,
-        80
+        880,
+        496
       ],
       "id": "2b56e9b2-ebf3-4283-8159-de077ef7f506",
       "name": "Embeddings Google Gemini",
-      "disabled": true,
-      "credentials": {
-        "googlePalmApi": {
-          "id": "SHyV5aSoOEktnfvG",
-          "name": "Google Gemini(PaLM) Api account"
-        }
-      }
+      "disabled": true
     },
     {
       "parameters": {
@@ -361,8 +337,8 @@
       "type": "@n8n/n8n-nodes-langchain.vectorStoreInMemory",
       "typeVersion": 1.3,
       "position": [
-        2656,
-        -32
+        -720,
+        384
       ],
       "id": "9b753677-62bc-4c85-8e36-f33d4678829f",
       "name": "Simple Vector Store1"
@@ -374,15 +350,16 @@
       "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
       "typeVersion": 1,
       "position": [
-        2752,
-        144
+        -624,
+        560
       ],
       "id": "a2cbdb57-6875-4d22-bc88-0076fc74591c",
       "name": "Embeddings Google Gemini1",
       "credentials": {
         "googlePalmApi": {
-          "id": "SHyV5aSoOEktnfvG",
-          "name": "Google Gemini(PaLM) Api account"
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
         }
       }
     },
@@ -396,19 +373,13 @@
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.2,
       "position": [
-        3488,
-        -224
+        112,
+        192
       ],
       "id": "fc63d519-920e-49b9-bfad-1f2d95ece1c2",
       "name": "Send a message1",
       "webhookId": "ea8e9cb9-1dd8-4aa9-8db3-d91ca11c8813",
-      "disabled": true,
-      "credentials": {
-        "gmailOAuth2": {
-          "id": "bCttfsOZADrG4VWx",
-          "name": "Gmail account"
-        }
-      }
+      "disabled": true
     },
     {
       "parameters": {
@@ -438,8 +409,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        2912,
-        -320
+        -464,
+        96
       ],
       "id": "9ae0a3d2-4bfc-40b8-9917-aa3b44059054",
       "name": "If"
@@ -449,45 +420,24 @@
         "description": "Search the orders database using the customer's order ID. Use this tool when the customer asks about the status, tracking number, or estimated delivery of a specific order. Never invent order information.",
         "workflowId": {
           "__rl": true,
-          "mode": "id",
-          "value": "8cf0BBVr8yhEylqW"
+          "value": "0QlhIam3VcKI58YF",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/0QlhIam3VcKI58YF",
+          "cachedResultName": "Order Lookup Tool"
         },
         "workflowInputs": {
           "mappingMode": "defineBelow",
           "value": {
-            "order_id": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('order_id', ``, 'string') }}",
-            "customer_email": "={{ String($('Gmail Trigger').first().json.From || '').match(/<([^>]+)>/)?.[1] || $('Gmail Trigger').first().json.From }}",
-            "shopBaseUrl": "https://erik-unbarking-foolhardily.ngrok-free.dev"
+            "order_id": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('order_id', ``, 'string') }}"
           },
           "matchingColumns": [
-            "order_id",
-            "customer_email"
+            "order_id"
           ],
           "schema": [
             {
               "id": "order_id",
               "displayName": "order_id",
-              "required": true,
-              "defaultMatch": false,
-              "display": true,
-              "canBeUsedToMatch": true,
-              "type": "string",
-              "removed": false
-            },
-            {
-              "id": "customer_email",
-              "displayName": "customer_email",
-              "required": true,
-              "defaultMatch": false,
-              "display": true,
-              "canBeUsedToMatch": true,
-              "type": "string",
-              "removed": false
-            },
-            {
-              "id": "shopBaseUrl",
-              "displayName": "shopBaseUrl",
-              "required": true,
+              "required": false,
               "defaultMatch": false,
               "display": true,
               "canBeUsedToMatch": true,
@@ -502,8 +452,8 @@
       "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
       "typeVersion": 2.2,
       "position": [
-        3072,
-        96
+        -304,
+        512
       ],
       "id": "58ea7c2a-05cf-4c4e-9d31-e174e02632dd",
       "name": "Call 'Order Lookup Tool'"
@@ -513,8 +463,10 @@
         "operation": "get",
         "dataTableId": {
           "__rl": true,
-          "mode": "id",
-          "value": "5F3pUUYCSQ4Uw1Z6"
+          "value": "5hXhb5oZTGcqxRwj",
+          "mode": "list",
+          "cachedResultName": "conversation_context",
+          "cachedResultUrl": "/projects/OVbqhMM15DSm48Kn/datatables/5hXhb5oZTGcqxRwj"
         },
         "filters": {
           "conditions": [
@@ -528,8 +480,8 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        -2048,
-        -256
+        -2528,
+        128
       ],
       "id": "77fbefee-1904-4971-8554-42ba4d9d1ec5",
       "name": "Get row(s)1",
@@ -562,8 +514,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        -1808,
-        -256
+        -2288,
+        128
       ],
       "id": "a5e46e93-dc61-494c-882f-da9cf3ddd126",
       "name": "If1",
@@ -581,26 +533,22 @@
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.2,
       "position": [
-        1760,
-        -416
+        0,
+        0
       ],
       "id": "39a77b4e-31b8-4333-a8e8-b6ca16e6e21b",
       "name": "Reply to a message",
       "webhookId": "0b66b2a3-8674-42ba-bcb2-e7bfbf104f7a",
-      "disabled": true,
-      "credentials": {
-        "gmailOAuth2": {
-          "id": "bCttfsOZADrG4VWx",
-          "name": "Gmail account"
-        }
-      }
+      "disabled": true
     },
     {
       "parameters": {
         "dataTableId": {
           "__rl": true,
-          "mode": "id",
-          "value": "5F3pUUYCSQ4Uw1Z6"
+          "value": "5hXhb5oZTGcqxRwj",
+          "mode": "list",
+          "cachedResultName": "conversation_context",
+          "cachedResultUrl": "/projects/OVbqhMM15DSm48Kn/datatables/5hXhb5oZTGcqxRwj"
         },
         "columns": {
           "mappingMode": "defineBelow",
@@ -694,8 +642,8 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        1280,
-        -128
+        -2048,
+        288
       ],
       "id": "c2e3cf65-3293-44ac-b065-0ea2d2e39a05",
       "name": "Insert row1"
@@ -723,8 +671,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.5,
       "position": [
-        1280,
-        -368
+        -2048,
+        48
       ],
       "id": "46f3b908-a1fe-4278-926c-d7561f8f9e96",
       "name": "Edit Fields1"
@@ -734,8 +682,10 @@
         "operation": "update",
         "dataTableId": {
           "__rl": true,
-          "mode": "id",
-          "value": "5F3pUUYCSQ4Uw1Z6"
+          "value": "5hXhb5oZTGcqxRwj",
+          "mode": "list",
+          "cachedResultName": "conversation_context",
+          "cachedResultUrl": "/projects/OVbqhMM15DSm48Kn/datatables/5hXhb5oZTGcqxRwj"
         },
         "filters": {
           "conditions": [
@@ -837,8 +787,8 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        2000,
-        -208
+        -1376,
+        208
       ],
       "id": "97ee0af5-d241-460b-835f-d1b962887b90",
       "name": "Update row(s)1"
@@ -871,8 +821,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        3152,
-        -224
+        -224,
+        192
       ],
       "id": "59dcbc26-e5de-4795-a668-c5e42a3dac26",
       "name": "If2"
@@ -881,30 +831,41 @@
       "parameters": {
         "httpMethod": "POST",
         "path": "order-ready-for-shipment",
-        "options": {}
+        "options": {},
+        "responseMode": "onReceived"
       },
       "id": "3f28f100-e748-4ba4-b4a1-9178d1120fbd",
       "name": "Order Ready For Shipment",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        -3200,
-        800
+        -6400,
+        -3900
       ],
       "webhookId": "739eeebd-526c-46bb-9ce2-17e44a1b107f"
     },
     {
       "parameters": {
-        "jsCode": "const data=$input.first().json;\nconst config=$('Workflow Config').first().json;\nreturn [{json:{...data,demo_scenario:config.body?.demo_scenario||'normal'}}];"
+        "method": "GET",
+        "url": "={{ $('Workflow Config').first().json.shopBaseUrl + '/api/automation/orders/' + encodeURIComponent($('Workflow Config').first().json.body?.order_id || 'SET_ORDER_ID_FOR_MANUAL_TEST') }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
       },
       "id": "5173a95d-410b-4220-9cf1-4e47ec90d711",
       "name": "Get Order",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
-        -2480,
-        800
-      ]
+        -5920,
+        -3900
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "UgB67LNiMKERsMAQ",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {},
@@ -913,34 +874,34 @@
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
       "position": [
-        -3200,
-        1040
+        -6400,
+        -3600
       ]
     },
     {
       "parameters": {
-        "jsCode": "const TOLERANCE = 0.01;\nreturn $input.all().map((entry) => {\n  const order = entry.json;\n  const errors = [];\n\n  // Customer and address\n  if (!order.customer || !order.customer.email) errors.push('Missing customer or email');\n  const addr = order.shipping_address || {};\n  if (!addr.street || !addr.city || !addr.postal_code || !addr.country) errors.push('Incomplete shipping address');\n\n  // An already-reserved packing order may be handed between the order event and logistics flows.\n  const reservationAlreadyStarted = order.status === 'packing' && order.inventoryReserved === true;\n  if (order.status !== 'ready_for_shipment' && !reservationAlreadyStarted) {\n    errors.push('Invalid order status: ' + (order.status || 'missing') + ' (expected ready_for_shipment or an already-reserved packing order)');\n  }\n\n  // 2. Products\n  const products = Array.isArray(order.products) ? order.products : [];\n  if (products.length === 0) errors.push('No products in order');\n  let computedTotal = 0;\n  products.forEach((p, i) => {\n    const item = p || {};\n    const label = 'Product #' + (i + 1) + (item.sku ? ' (' + item.sku + ')' : '');\n    if (!item.sku) errors.push(label + ': missing sku');\n    if (!item.name) errors.push(label + ': missing name');\n    const qty = Number(item.qty);\n    const qtyOk = item.qty !== undefined && item.qty !== null && item.qty !== '' && Number.isFinite(qty) && qty > 0;\n    if (!qtyOk) errors.push(label + ': quantity must be greater than 0');\n    const price = Number(item.price);\n    const priceOk = item.price !== undefined && item.price !== null && item.price !== '' && Number.isFinite(price) && price >= 0;\n    if (!priceOk) errors.push(label + ': price must be 0 or more');\n    if (qtyOk && priceOk) computedTotal += qty * price;\n  });\n  computedTotal = Math.round(computedTotal * 100) / 100;\n\n  // 3. Order total = sum(qty x price)\n  const total = Number(order.total_amount);\n  if (!Number.isFinite(total) || total <= 0) {\n    errors.push('Total amount must be greater than 0');\n  } else if (Math.abs(computedTotal + Number(order.shipping_amount || 0) - total) > TOLERANCE) {\n    errors.push('Order total mismatch (computed ' + computedTotal.toFixed(2) + ' vs order ' + total.toFixed(2) + ')');\n  }\n\n  // 4. Payment\n  if (order.payment_status !== 'paid') errors.push('Payment not completed (payment_status: ' + (order.payment_status || 'missing') + ')');\n  if (!order.currency) errors.push('Missing currency');\n  if (order.paid_amount !== undefined && order.paid_amount !== null) {\n    const paid = Number(order.paid_amount);\n    if (!Number.isFinite(paid) || (Number.isFinite(total) && Math.abs(paid - total) > TOLERANCE)) {\n      errors.push('Paid amount mismatch (paid ' + order.paid_amount + ' vs total ' + order.total_amount + ')');\n    }\n  }\n\n  return { json: { ...order, computed_total: computedTotal, isValid: errors.length === 0, validationErrors: errors } };\n});"
+        "jsCode": "const TOLERANCE = 0.01;\nreturn $input.all().map((entry) => {\n  const order = entry.json;\n  const errors = [];\n\n  // Customer and address\n  if (!order.customer || !order.customer.email) errors.push('Missing customer or email');\n  const addr = order.shipping_address || {};\n  if (!addr.street || !addr.city || !addr.postal_code || !addr.country) errors.push('Incomplete shipping address');\n\n  // 1. Order status: only ready_for_shipment can be shipped\n  if (!['ready_for_shipment','packing'].includes(order.status)) {\n    errors.push('Invalid order status: ' + (order.status || 'missing') + ' (expected ready_for_shipment)');\n  }\n\n  // 2. Products\n  const products = Array.isArray(order.products) ? order.products : [];\n  if (products.length === 0) errors.push('No products in order');\n  let computedTotal = 0;\n  products.forEach((p, i) => {\n    const item = p || {};\n    const label = 'Product #' + (i + 1) + (item.sku ? ' (' + item.sku + ')' : '');\n    if (!item.sku) errors.push(label + ': missing sku');\n    if (!item.name) errors.push(label + ': missing name');\n    const qty = Number(item.qty);\n    const qtyOk = item.qty !== undefined && item.qty !== null && item.qty !== '' && Number.isFinite(qty) && qty > 0;\n    if (!qtyOk) errors.push(label + ': quantity must be greater than 0');\n    const price = Number(item.price);\n    const priceOk = item.price !== undefined && item.price !== null && item.price !== '' && Number.isFinite(price) && price >= 0;\n    if (!priceOk) errors.push(label + ': price must be 0 or more');\n    if (qtyOk && priceOk) computedTotal += qty * price;\n  });\n  computedTotal = Math.round((computedTotal + Number(order.shipping_amount || 0)) * 100) / 100;\n\n  // 3. Order total = sum(qty x price)\n  const total = Number(order.total_amount);\n  if (!Number.isFinite(total) || total <= 0) {\n    errors.push('Total amount must be greater than 0');\n  } else if (Math.abs(computedTotal - total) > TOLERANCE) {\n    errors.push('Order total mismatch (computed ' + computedTotal.toFixed(2) + ' vs order ' + total.toFixed(2) + ')');\n  }\n\n  // 4. Payment\n  if (order.payment_status !== 'paid') errors.push('Payment not completed (payment_status: ' + (order.payment_status || 'missing') + ')');\n  if (!order.currency) errors.push('Missing currency');\n  if (order.paid_amount !== undefined && order.paid_amount !== null) {\n    const paid = Number(order.paid_amount);\n    if (!Number.isFinite(paid) || (Number.isFinite(total) && Math.abs(paid - total) > TOLERANCE)) {\n      errors.push('Paid amount mismatch (paid ' + order.paid_amount + ' vs total ' + order.total_amount + ')');\n    }\n  }\n\n  return { json: { ...order, computed_total: computedTotal, isValid: errors.length === 0, validationErrors: errors } };\n});"
       },
       "id": "60ecdb9b-ec16-43a2-8099-b856bf327172",
       "name": "Validate Order",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -2240,
-        800
+        -5680,
+        -3900
       ]
     },
     {
       "parameters": {
-        "jsCode": "return $input.all().map((entry) => {\n  const order = entry.json;\n  const duplicate = Boolean(order.shipment_id || order.shipment);\n  const errors = [...(order.validationErrors || [])];\n  if (duplicate) errors.push('Duplicate order: ' + order.id + ' already has a shipment');\n  return { json: { ...order, duplicate, validationErrors: errors, isValid: order.isValid === true && !duplicate } };\n});"
+        "jsCode": "return $input.all().map(({json:o})=>{const errors=[...(o.validationErrors||[])];if(o.shipment)errors.push('Shipment already exists; do not send duplicate notifications');return {json:{...o,duplicate:!!o.shipment,validationErrors:errors,isValid:errors.length===0}};});"
       },
       "id": "74f378a0-ceb9-4fce-b0e5-e0cc02c54d53",
       "name": "Check Duplicate",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -2000,
-        800
+        -5440,
+        -3900
       ]
     },
     {
@@ -973,8 +934,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        -1760,
-        800
+        -5200,
+        -3900
       ]
     },
     {
@@ -986,22 +947,32 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -1520,
-        800
+        -4960,
+        -3900
       ]
     },
     {
       "parameters": {
-        "jsCode": "return $input.all();"
+        "method": "GET",
+        "url": "={{ $('Workflow Config').first().json.shopBaseUrl + '/api/automation/orders/' + encodeURIComponent($('Get Order').first().json.id) + '/stock' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
       },
       "id": "d6da7785-3050-428c-b2e2-befdd39c1ce9",
       "name": "Check Stock",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
-        -1040,
-        800
-      ]
+        -4720,
+        -3900
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "UgB67LNiMKERsMAQ",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
@@ -1033,60 +1004,73 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        -800,
-        800
+        -4480,
+        -3900
       ]
     },
     {
       "parameters": {
-        "jsCode": "return $input.all();"
+        "method": "POST",
+        "url": "={{ $('Workflow Config').first().json.shopBaseUrl + '/api/automation/orders/' + encodeURIComponent($('Get Order').first().json.id) + '/reserve' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{}"
       },
       "id": "e8084cb6-5518-485e-b325-7acda3e53015",
       "name": "Reserve Stock",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
-        -320,
-        800
-      ]
+        -4240,
+        -3900
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "UgB67LNiMKERsMAQ",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
-        "jsCode": "return $input.all();"
+        "jsCode": "const o=$input.first().json; if(!o.inventoryReserved) throw new Error('Reservation failed; inspect this order in admin operations. No stock was deducted.'); return [{json:o}];"
       },
       "id": "1fbda410-5fc1-4899-8434-b79c7277c1e1",
-      "name": "Update Inventory",
+      "name": "Shop reservation already updates stock",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -80,
-        800
+        -2912,
+        656
       ]
     },
     {
       "parameters": {
-        "jsCode": "return $input.all();"
+        "jsCode": "return $input.all(); // Availability is already updated atomically by the shop reservation API."
       },
       "id": "d66926e2-b39b-4130-ac60-4d4d5a827f39",
-      "name": "Update Product Availability",
+      "name": "Shop already saved availability",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        160,
-        800
+        -2688,
+        656
       ]
     },
     {
       "parameters": {
-        "jsCode": "return $input.all();"
+        "jsCode": "const o=$input.first().json; return [{json:{order_id:o.id,warehouse_task_id:o.warehouse.taskId,warehouse_status:o.warehouse.status,warehouse_check_number:0}}];"
       },
       "id": "35ed4a44-dc44-4f8d-b78b-3e0d765caf84",
-      "name": "Create Warehouse Task",
+      "name": "Track shop warehouse task",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        400,
-        800
+        -2464,
+        656
       ]
     },
     {
@@ -1100,22 +1084,22 @@
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
       "position": [
-        880,
-        800
+        -3280,
+        -3200
       ],
       "webhookId": "57b77e5c-74c5-498b-a7a2-ee07bc0ff66b"
     },
     {
       "parameters": {
-        "jsCode": "return $input.all();"
+        "jsCode": "const state=$input.first().json;const check=Number($('Wait For Warehouse Update').first().json.warehouse_check_number||0)+1;return [{json:{...state,warehouse_check_number:check,max_checks:240,warehouse_status:check>=240&&['pending','packaging'].includes(state.warehouse_status)?'warehouse_timeout':state.warehouse_status}}];"
       },
       "id": "9796d61c-bfa0-422a-a9ed-c2a0792a6c66",
       "name": "Check Warehouse Status",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1360,
-        800
+        -2800,
+        -3200
       ]
     },
     {
@@ -1260,22 +1244,35 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.4,
       "position": [
-        1600,
-        800
+        -2560,
+        -3200
       ]
     },
     {
       "parameters": {
-        "jsCode": "return $input.all();"
+        "method": "POST",
+        "url": "={{ $('Workflow Config').first().json.shopBaseUrl + '/api/automation/orders/' + encodeURIComponent($('Get Order').first().json.id) + '/ship' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{}"
       },
       "id": "9d51d059-ef00-49e3-a8d9-56a6666f618a",
       "name": "Create Shipment",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
-        1840,
-        800
-      ]
+        -2320,
+        -3200
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "UgB67LNiMKERsMAQ",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
@@ -1314,21 +1311,21 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.5,
       "position": [
-        2080,
-        800
+        -2320,
+        -2100
       ]
     },
     {
       "parameters": {
-        "jsCode": "return $input.all();"
+        "jsCode": "return $input.all(); // Create Shipment has already persisted the shipment and shipped status."
       },
       "id": "08c9eb4b-abf8-40f3-9707-3e01018509bb",
-      "name": "Update Order Shipped",
+      "name": "Shipment already saved by shop",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2320,
-        800
+        -1120,
+        288
       ]
     },
     {
@@ -1343,17 +1340,11 @@
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.2,
       "position": [
-        2560,
-        800
+        -1840,
+        -2100
       ],
       "webhookId": "fd2ef7d7-cee6-419f-8095-c1ed4d2714bf",
-      "disabled": true,
-      "credentials": {
-        "gmailOAuth2": {
-          "id": "bCttfsOZADrG4VWx",
-          "name": "Gmail account"
-        }
-      }
+      "disabled": true
     },
     {
       "parameters": {
@@ -1366,22 +1357,22 @@
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
       "position": [
-        2800,
-        800
+        -1600,
+        -2100
       ],
       "webhookId": "1f90dc25-f0e9-4ede-a9e9-37e507e70bbe"
     },
     {
       "parameters": {
-        "jsCode": "return $input.all();"
+        "jsCode": "const state=$input.first().json;const previous=$('Wait Before Status Check').first().json;const check=Number(previous.delivery_check_number||0)+1;return [{json:{...state,delivery_check_number:check,max_checks:240,status:check>=240&&['in_transit','delayed'].includes(state.status)?'tracking_timeout':state.status}}];"
       },
       "id": "82249599-4e6d-4eac-8edf-961742d5da0e",
-      "name": "Get Delivery Status",
+      "name": "Check delivery status and timeout",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3040,
-        800
+        -448,
+        288
       ]
     },
     {
@@ -1532,35 +1523,48 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.4,
       "position": [
-        3280,
-        800
+        -880,
+        -2100
       ]
     },
     {
       "parameters": {
-        "jsCode": "return $input.all();"
+        "jsCode": "return $input.all(); // Courier status comes from the shop; do not invent scans."
       },
       "id": "c1c80817-1f32-45be-b654-26b41a2c83ec",
-      "name": "Update Order In Transit",
+      "name": "Transit status already saved",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3760,
-        560
+        0,
+        0
       ]
     },
     {
       "parameters": {
-        "jsCode": "return $input.all();"
+        "method": "POST",
+        "url": "={{ $('Workflow Config').first().json.shopBaseUrl + '/api/automation/orders/' + encodeURIComponent($('Get Order').first().json.id) + '/delivery' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"status\":\"delivered\"}"
       },
       "id": "d7ee5a24-96e9-4325-980b-3f270be8f05c",
       "name": "Update Order Delivered",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
-        3760,
-        800
-      ]
+        -640,
+        -2100
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "UgB67LNiMKERsMAQ",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
@@ -1574,30 +1578,37 @@
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.2,
       "position": [
-        4000,
-        800
+        -400,
+        -2100
       ],
       "webhookId": "4d4a290b-0211-4286-82a7-2c7bb49ae117",
-      "disabled": true,
-      "credentials": {
-        "gmailOAuth2": {
-          "id": "bCttfsOZADrG4VWx",
-          "name": "Gmail account"
-        }
-      }
+      "disabled": true
     },
     {
       "parameters": {
-        "jsCode": "return $input.all();"
+        "method": "POST",
+        "url": "={{ $('Workflow Config').first().json.shopBaseUrl + '/api/automation/orders/' + encodeURIComponent($('Get Order').first().json.id) + '/reconcile' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{}"
       },
       "id": "b9a38faa-d845-4dd9-8be9-472c945e277a",
       "name": "Reconcile Payment",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
-        4480,
-        800
-      ]
+        -160,
+        -2100
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "UgB67LNiMKERsMAQ",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
@@ -1629,8 +1640,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        4720,
-        800
+        80,
+        -2100
       ]
     },
     {
@@ -1645,53 +1656,50 @@
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.2,
       "position": [
-        4960,
-        800
+        320,
+        -2100
       ],
       "webhookId": "99c994b6-367f-44f5-85a6-e0f81c850212",
-      "disabled": true,
-      "credentials": {
-        "gmailOAuth2": {
-          "id": "bCttfsOZADrG4VWx",
-          "name": "Gmail account"
-        }
-      }
+      "disabled": true
     },
     {
       "parameters": {
-        "sendTo": "zahrouni.maya@esprit.tn",
-        "subject": "=Manual review required — order {{ $('Get Order').item.json.id }}",
-        "message": "=A logistics case needs a human.<br><br>Order: <b>{{ $('Get Order').item.json.id }}</b><br>Customer: {{ $('Get Order').item.json.customer.email }}<br>Reason: {{ $json.labelIds ? \"Payment inconsistency: \" + $(\"Reconcile Payment\").item.json.discrepancyReason : $json.validationErrors && $json.validationErrors.length ? \"Order validation failed: \" + $json.validationErrors.join(\"; \") : $json.stockErrors && $json.stockErrors.length ? \"Stock unavailable: \" + $json.stockErrors.join(\"; \") : $json.warehouse_status ? \"Warehouse issue: \" + $json.warehouse_status : $json.discrepancyReason ? \"Payment inconsistency: \" + $json.discrepancyReason : $json.status ? \"Delivery status: \" + $json.status : \"see execution\" }}<br><br>Cases handled by a human: failed validation, duplicate order, stock unavailable, warehouse discrepancy / damaged / missing products, warehouse or tracking timeout, payment inconsistency, lost / damaged / failed / returned shipment, unknown status.",
-        "options": {}
+        "method": "POST",
+        "url": "={{ $('Workflow Config').first().json.shopBaseUrl + '/api/automation/orders/' + encodeURIComponent($('Get Order').first().json.id) + '/escalate' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({reason: $json.validationErrors?.join('; ') || $json.stockErrors?.join('; ') || $json.discrepancyReason || $json.warehouse_status || $json.status || 'Manual logistics review required'}) }}"
       },
       "id": "e23e7daf-706e-4df1-b6dd-a22865b22d4b",
       "name": "Escalate To Human",
-      "type": "n8n-nodes-base.gmail",
-      "typeVersion": 2.2,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
-        3520,
-        1280
+        -4960,
+        -3500
       ],
       "webhookId": "f88f2613-75b1-4a81-a9c9-89d9a656f96a",
-      "disabled": true,
       "credentials": {
-        "gmailOAuth2": {
-          "id": "bCttfsOZADrG4VWx",
-          "name": "Gmail account"
+        "httpHeaderAuth": {
+          "id": "UgB67LNiMKERsMAQ",
+          "name": "Header Auth account"
         }
       }
     },
     {
       "parameters": {
-        "jsCode": "return $input.all();"
+        "jsCode": "return $input.all(); // Courier status has already been persisted."
       },
       "id": "fbdef743-13a6-41af-8d8c-b3a6fa9946bb",
-      "name": "Update Order Delayed",
+      "name": "Delay status already saved",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3760,
-        1040
+        0,
+        384
       ]
     },
     {
@@ -1706,39 +1714,27 @@
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.2,
       "position": [
-        4000,
-        1040
+        -400,
+        -1750
       ],
       "webhookId": "3a1c9858-3c2d-48d2-8932-476956d73ddc",
-      "disabled": true,
-      "credentials": {
-        "gmailOAuth2": {
-          "id": "bCttfsOZADrG4VWx",
-          "name": "Gmail account"
-        }
-      }
+      "disabled": true
     },
     {
       "parameters": {
         "workflowInputs": {
           "values": [
             {
-              "name": "order_id",
-              "type": "string"
-            },
-            {
-              "name": "customer_email",
-              "type": "string"
+              "name": "order_id"
             }
           ]
-        },
-        "inputSource": "workflowInputs"
+        }
       },
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1.2,
       "position": [
-        1664,
-        -160
+        -1712,
+        256
       ],
       "id": "548de6ba-898f-407b-b071-aae515d7cd10",
       "name": "When Executed by Another Workflow"
@@ -1748,18 +1744,16 @@
         "operation": "get",
         "dataTableId": {
           "__rl": true,
-          "mode": "id",
-          "value": "2oakhQTHCbyc9DIp"
+          "value": "UlO9eefMNEtKxNQV",
+          "mode": "list",
+          "cachedResultName": "order",
+          "cachedResultUrl": "/projects/OVbqhMM15DSm48Kn/datatables/UlO9eefMNEtKxNQV"
         },
         "filters": {
           "conditions": [
             {
               "keyName": "order_id",
               "keyValue": "={{ $json.order_id }}"
-            },
-            {
-              "keyName": "customer_email",
-              "keyValue": "={{ $json.customer_email }}"
             }
           ]
         }
@@ -1767,8 +1761,8 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        1888,
-        -160
+        -1488,
+        256
       ],
       "id": "c7d18048-7fb6-4305-a9a8-d67991f6cb6d",
       "name": "Get row(s)"
@@ -1814,8 +1808,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.5,
       "position": [
-        2112,
-        -160
+        -1264,
+        256
       ],
       "id": "d5c6b325-3599-4a84-b218-f0d14ad195d7",
       "name": "Edit Fields"
@@ -1832,13 +1826,13 @@
       "typeVersion": 2,
       "position": [
         -1712,
-        2968
+        4256
       ],
       "webhookId": "f71cc3d7-d735-4972-9e9d-b66a308e659f"
     },
     {
       "parameters": {
-        "jsCode": "const event=$input.first().json.body||{};\nif(!event.order_id && !event.order?.id) return [];\nif(event.type && !['order.created','order.validated','order.confirmed','order.cancelled','order.shipped','shipment.updated','payment.reconciled','inventory.reserved','warehouse.ready','warehouse.updated','order.review_required'].includes(event.type))return [];\nreturn [{json:{event,orderId:String(event.order_id||event.order.id),shopBaseUrl:\"https://erik-unbarking-foolhardily.ngrok-free.dev\",logisticsWebhookUrl:\"https://cosmos-team-5ia.app.n8n.cloud/webhook/order-ready-for-shipment\"}}];"
+        "jsCode": "const event=$input.first().json.body||{};\nif(!event.order_id && !event.order?.id) return [];\nif(event.type && !['order.created','order.validated','order.confirmed','order.cancelled','order.shipped','shipment.updated','payment.reconciled','inventory.reserved','warehouse.ready','warehouse.updated','order.review_required'].includes(event.type))return [];\nreturn [{json:{event,orderId:String(event.order_id||event.order.id),shopBaseUrl: \"https://erik-unbarking-foolhardily.ngrok-free.dev\",logisticsWebhookUrl:'https://cosmos-team-5ia.app.n8n.cloud/webhook/order-ready-for-shipment'}}];"
       },
       "id": "956b2032-8748-4275-a3ff-f5b7236ba4f3",
       "name": "OH Configuration",
@@ -1846,7 +1840,7 @@
       "typeVersion": 2,
       "position": [
         -1472,
-        2968
+        4256
       ]
     },
     {
@@ -1871,7 +1865,7 @@
       "typeVersion": 4.2,
       "position": [
         -1232,
-        2968
+        4256
       ],
       "credentials": {
         "httpHeaderAuth": {
@@ -1890,7 +1884,7 @@
       "typeVersion": 2,
       "position": [
         -992,
-        2968
+        4256
       ]
     },
     {
@@ -1977,7 +1971,7 @@
       "typeVersion": 1.1,
       "position": [
         -752,
-        2968
+        4256
       ]
     },
     {
@@ -2042,7 +2036,7 @@
       "typeVersion": 3.4,
       "position": [
         -512,
-        2256
+        4256
       ]
     },
     {
@@ -2055,7 +2049,7 @@
       "typeVersion": 2,
       "position": [
         -272,
-        2256
+        4256
       ]
     },
     {
@@ -2089,7 +2083,7 @@
       "typeVersion": 2.3,
       "position": [
         -32,
-        2256
+        4256
       ]
     },
     {
@@ -2114,7 +2108,7 @@
       "typeVersion": 4.2,
       "position": [
         208,
-        2256
+        4256
       ],
       "credentials": {
         "httpHeaderAuth": {
@@ -2154,7 +2148,7 @@
       "typeVersion": 2.3,
       "position": [
         448,
-        2256
+        4256
       ]
     },
     {
@@ -2219,7 +2213,7 @@
       "typeVersion": 3.4,
       "position": [
         688,
-        2256
+        4256
       ]
     },
     {
@@ -2248,7 +2242,7 @@
       "typeVersion": 4.2,
       "position": [
         928,
-        2112
+        4112
       ],
       "credentials": {
         "httpHeaderAuth": {
@@ -2262,8 +2256,8 @@
         "operation": "upsert",
         "dataTableId": {
           "__rl": true,
-          "mode": "id",
-          "value": "2oakhQTHCbyc9DIp"
+          "value": "2oakhQTHCbyc9DIp",
+          "mode": "id"
         },
         "filters": {
           "conditions": [
@@ -2341,7 +2335,7 @@
       "typeVersion": 1.1,
       "position": [
         1168,
-        2112
+        4112
       ]
     },
     {
@@ -2357,16 +2351,10 @@
       "typeVersion": 2.2,
       "position": [
         1408,
-        2112
+        4112
       ],
       "webhookId": "c05c2be2-7bbf-447a-861c-f72b74187470",
-      "disabled": true,
-      "credentials": {
-        "gmailOAuth2": {
-          "id": "bCttfsOZADrG4VWx",
-          "name": "Gmail account"
-        }
-      }
+      "disabled": true
     },
     {
       "parameters": {
@@ -2383,7 +2371,7 @@
       "typeVersion": 4.2,
       "position": [
         928,
-        2448
+        4448
       ]
     },
     {
@@ -2412,7 +2400,7 @@
       "typeVersion": 4.2,
       "position": [
         1168,
-        2448
+        4448
       ],
       "credentials": {
         "httpHeaderAuth": {
@@ -2447,7 +2435,7 @@
       "typeVersion": 4.2,
       "position": [
         448,
-        2720
+        4720
       ],
       "credentials": {
         "httpHeaderAuth": {
@@ -2472,12 +2460,12 @@
       "typeVersion": 1.2,
       "position": [
         -1712,
-        3464
+        5168
       ]
     },
     {
       "parameters": {
-        "jsCode": "return [{json:{shopBaseUrl:\"https://erik-unbarking-foolhardily.ngrok-free.dev\",remindAfterHours:24,reviewAfterHours:72}}];"
+        "jsCode": "return [{json:{shopBaseUrl: \"https://erik-unbarking-foolhardily.ngrok-free.dev\",remindAfterHours:24,reviewAfterHours:72}}];"
       },
       "id": "bc0c119e-7664-4059-815c-c836c34bb75a",
       "name": "OH Followup Configuration",
@@ -2485,7 +2473,7 @@
       "typeVersion": 2,
       "position": [
         -1472,
-        3464
+        5168
       ]
     },
     {
@@ -2510,7 +2498,7 @@
       "typeVersion": 4.2,
       "position": [
         -1232,
-        3464
+        5168
       ],
       "credentials": {
         "httpHeaderAuth": {
@@ -2529,7 +2517,7 @@
       "typeVersion": 2,
       "position": [
         -992,
-        3464
+        5168
       ]
     },
     {
@@ -2558,7 +2546,7 @@
       "typeVersion": 4.2,
       "position": [
         -752,
-        3464
+        5168
       ],
       "credentials": {
         "httpHeaderAuth": {
@@ -2569,7 +2557,7 @@
     },
     {
       "parameters": {
-        "content": "# NEW: Order handling\nReceive → live lookup / duplicate guards → sync existing lookup table → validate customer/payment/totals → check stock → confirmation → confirmed handoff. Hourly follow-up creates a demo reminder after 24h or human review after 72h.\n\nConfigure both OH config nodes, the new HTTP credentials, and the lookup-table binding. Real confirmation email is disabled until configured.\n\nThe original Logistics code remains mock-based by request. Its HTTP acceptance is not proof of actual fulfillment.\n\nSee MERGE-README.md.",
+        "content": "# NEW: Order handling\nReceive → live lookup / duplicate guards → sync existing lookup table → validate customer/payment/totals → check stock → confirmation → confirmed handoff. Hourly follow-up creates a demo reminder after 24h or human review after 72h.\n\nConfigure both OH nodes, the Header Auth credential, and the lookup-table binding. The shop-backed Logistics blocks are explained in the notes below. Real confirmation email is disabled until configured.\n\nThe Logistics block below now reads and updates shop records through the shop API. Courier, delivery, payment and email remain simulated. A webhook HTTP response alone does not prove downstream completion.\n\nSee MERGE-README.md.",
         "height": 420,
         "width": 1100
       },
@@ -2578,8 +2566,8 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -480,
-        1850
+        -1712,
+        3664
       ]
     },
     {
@@ -2593,8 +2581,8 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -3200,
-        1440
+        -1392,
+        992
       ]
     },
     {
@@ -2608,206 +2596,24 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -2800,
-        1440
+        16,
+        1008
       ]
     },
     {
-      "id": "f6292500-0fe4-49da-9594-f62d1417116e",
+      "id": "54cbf51b-98b0-43b1-b4bb-e331e11abd37",
       "name": "Workflow Config",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [
-        -2960,
-        800
-      ],
       "parameters": {
         "jsCode": "const input = $input.first().json;\nreturn [{json: {...input, shopBaseUrl: \"https://erik-unbarking-foolhardily.ngrok-free.dev\"}}];"
       },
-      "disabled": false
+      "position": [
+        -6160,
+        -3900
+      ]
     },
     {
-      "id": "7ee08864-bd78-43c9-aef8-581c7180d9f1",
-      "name": "INV | Load Order",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        -2720,
-        800
-      ],
-      "parameters": {
-        "url": "={{ $('Workflow Config').first().json.shopBaseUrl + '/api/automation/orders/' + encodeURIComponent($('Workflow Config').first().json.body?.order_id || 'SET_ORDER_ID_FOR_MANUAL_TEST') }}",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "options": {}
-      },
-      "disabled": false,
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "UgB67LNiMKERsMAQ",
-          "name": "Header Auth account"
-        }
-      }
-    },
-    {
-      "id": "62615f89-e3c7-4f32-9a25-a9e7b307b64e",
-      "name": "INV | Check Stock",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        -1280,
-        800
-      ],
-      "parameters": {
-        "url": "={{ $('Workflow Config').first().json.shopBaseUrl + '/api/automation/orders/' + encodeURIComponent($('Get Order').first().json.id) + '/stock' }}",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "options": {}
-      },
-      "disabled": false,
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "UgB67LNiMKERsMAQ",
-          "name": "Header Auth account"
-        }
-      }
-    },
-    {
-      "id": "2cc68dba-ac8f-403b-86d1-8604bb834013",
-      "name": "INV | Reserve Stock",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        -560,
-        800
-      ],
-      "parameters": {
-        "method": "POST",
-        "url": "={{ $('Workflow Config').first().json.shopBaseUrl + '/api/automation/orders/' + encodeURIComponent($('Get Order').first().json.id) + '/reserve' }}",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "ngrok-skip-browser-warning",
-              "value": "true"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "{}",
-        "options": {}
-      },
-      "disabled": false,
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "UgB67LNiMKERsMAQ",
-          "name": "Header Auth account"
-        }
-      }
-    },
-    {
-      "id": "58871963-901b-4405-9d67-d79fe251f94f",
-      "name": "INV | Create Warehouse Task",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        640,
-        800
-      ],
-      "parameters": {
-        "url": "={{ $('Workflow Config').first().json.shopBaseUrl + '/api/automation/orders/' + encodeURIComponent($('Get Order').first().json.id) + '/warehouse' }}",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "ngrok-skip-browser-warning",
-              "value": "true"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "disabled": false,
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "UgB67LNiMKERsMAQ",
-          "name": "Header Auth account"
-        }
-      }
-    },
-    {
-      "id": "ff35fb9c-db1c-436c-ab72-12df809bcc5f",
-      "name": "INV | Read Warehouse Status",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        1120,
-        800
-      ],
-      "parameters": {
-        "url": "={{ $('Workflow Config').first().json.shopBaseUrl + '/api/automation/orders/' + encodeURIComponent($('Get Order').first().json.id) + '/warehouse' }}",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "options": {}
-      },
-      "disabled": false,
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "UgB67LNiMKERsMAQ",
-          "name": "Header Auth account"
-        }
-      }
-    },
-    {
-      "id": "8ea28330-28fa-4146-85df-ef80f062aa43",
-      "name": "INV | Record Stock Issue",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        -560,
-        1120
-      ],
-      "parameters": {
-        "method": "POST",
-        "url": "={{ $('Workflow Config').first().json.shopBaseUrl + '/api/automation/orders/' + encodeURIComponent($('Get Order').first().json.id) + '/escalate' }}",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "ngrok-skip-browser-warning",
-              "value": "true"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ reason: $json.stockErrors?.join('; ') || 'Inventory stock issue' }) }}",
-        "options": {}
-      },
-      "disabled": false,
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "UgB67LNiMKERsMAQ",
-          "name": "Header Auth account"
-        }
-      }
-    },
-    {
-      "id": "98283f72-265c-4999-9e04-7fec81570c88",
-      "name": "Route Shop Event",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.3,
-      "position": [
-        -2960,
-        1120
-      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -2818,8 +2624,8 @@
           },
           "conditions": [
             {
-              "id": "support-event",
-              "leftValue": "={{ $json.body?.type === 'support.created' }}",
+              "id": "stock",
+              "leftValue": "={{ $json.inventoryReserved }}",
               "rightValue": true,
               "operator": {
                 "type": "boolean",
@@ -2831,46 +2637,30 @@
           "combinator": "and"
         },
         "options": {}
-      }
-    },
-    {
-      "id": "c423136a-f6bf-48a3-b30e-8fa3b858ca60",
-      "name": "Support | Ticket Created",
-      "type": "n8n-nodes-base.webhook",
-      "typeVersion": 2.1,
-      "position": [
-        -3200,
-        1760
-      ],
-      "parameters": {
-        "httpMethod": "POST",
-        "path": "larkspur-support",
-        "options": {}
       },
-      "webhookId": "81c4b6fc-08ff-4f0e-b326-8a4fa72d070f"
+      "id": "5e9c32b1-41e5-45c3-ab89-11542dc131ab",
+      "name": "Reservation Succeeded",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -4000,
+        -3900
+      ]
     },
     {
-      "id": "b31ef86b-9050-4dc3-bcde-ea622deb0d31",
-      "name": "Support | Load Ticket and Order",
+      "id": "e3f5b448-22d8-4082-9613-7359bc487df3",
+      "name": "Read Warehouse From Shop",
+      "position": [
+        -3040,
+        -3200
+      ],
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [
-        -2960,
-        1760
-      ],
       "parameters": {
-        "url": "={{ $('Workflow Config').first().json.shopBaseUrl + '/api/automation/support/' + encodeURIComponent($('Workflow Config').first().json.body.ticket.id) + '/context' }}",
+        "method": "GET",
+        "url": "={{ $('Workflow Config').first().json.shopBaseUrl + '/api/automation/orders/' + encodeURIComponent($('Get Order').first().json.id) + '/warehouse' }}",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "ngrok-skip-browser-warning",
-              "value": "true"
-            }
-          ]
-        },
         "options": {}
       },
       "credentials": {
@@ -2881,120 +2671,16 @@
       }
     },
     {
-      "id": "47b52c61-0a68-4e5c-a5b1-e51f4c52f245",
-      "name": "Support | Triage Ticket",
+      "id": "ae1a2189-647c-45fd-b4fa-f2c683d5d745",
+      "name": "Read Shipment From Shop",
+      "position": [
+        -1360,
+        -2100
+      ],
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [
-        -1968,
-        128
-      ],
       "parameters": {
-        "method": "POST",
-        "url": "={{ $('Workflow Config').first().json.shopBaseUrl + '/api/automation/support/' + encodeURIComponent($('Workflow Config').first().json.body.ticket.id) + '/triage' }}",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "ngrok-skip-browser-warning",
-              "value": "true"
-            }
-          ]
-        },
-        "options": {},
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ thread_id: $json.thread_id, transcript: $json.reconstructedThread, message_count: $json.messageCount }) }}"
-      },
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "UgB67LNiMKERsMAQ",
-          "name": "Header Auth account"
-        }
-      }
-    },
-    {
-      "id": "f6bee19d-90ea-4bd0-8042-a1bbe16a8ecf",
-      "name": "Support | Queue Draft in Demo Outbox",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        -1728,
-        128
-      ],
-      "parameters": {
-        "method": "POST",
-        "url": "={{ $('Workflow Config').first().json.shopBaseUrl + '/api/automation/support/' + encodeURIComponent($('Workflow Config').first().json.body.ticket.id) + '/queue-draft' }}",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "ngrok-skip-browser-warning",
-              "value": "true"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "{}",
-        "options": {}
-      },
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "UgB67LNiMKERsMAQ",
-          "name": "Header Auth account"
-        }
-      }
-    },
-    {
-      "id": "4209d8ae-3897-4cca-b818-c3a74cc7900e",
-      "name": "Logistics | Create Demo Shipment",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        1840,
-        560
-      ],
-      "parameters": {
-        "method": "POST",
-        "url": "={{ $('Workflow Config').first().json.shopBaseUrl + '/api/automation/orders/' + encodeURIComponent($('Get Order').first().json.id) + '/ship' }}",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "ngrok-skip-browser-warning",
-              "value": "true"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "{}",
-        "options": {}
-      },
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "UgB67LNiMKERsMAQ",
-          "name": "Header Auth account"
-        }
-      }
-    },
-    {
-      "id": "87c3eff8-2c8b-4fa9-b105-3d5b2d08aa2f",
-      "name": "Logistics | Read Simulated Shipment",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        2800,
-        560
-      ],
-      "parameters": {
+        "method": "GET",
         "url": "={{ $('Workflow Config').first().json.shopBaseUrl + '/api/automation/orders/' + encodeURIComponent($('Get Order').first().json.id) + '/shipment' }}",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
@@ -3008,192 +2694,63 @@
       }
     },
     {
-      "id": "07fefbad-fbc3-48e1-a547-941c9badb0a5",
-      "name": "Logistics | Record Transit Status",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
+      "id": "dd1c68b7-eff4-4fb7-9149-c71303ba71e7",
+      "name": "LOGISTICS 1 · Validate & prevent duplicates",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
       "position": [
-        3520,
-        560
+        -6500,
+        -4500
       ],
       "parameters": {
-        "method": "POST",
-        "url": "={{ $('Workflow Config').first().json.shopBaseUrl + '/api/automation/orders/' + encodeURIComponent($('Get Order').first().json.id) + '/delivery' }}",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "ngrok-skip-browser-warning",
-              "value": "true"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "{\"status\":\"in_transit\"}",
-        "options": {}
-      },
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "UgB67LNiMKERsMAQ",
-          "name": "Header Auth account"
-        }
+        "content": "# 1 · Validate the order\n\nWebhook → live shop lookup → address, items, total and payment checks → duplicate guard. Invalid or repeated orders go to Manager review. The shop API is the source of truth.",
+        "height": 170,
+        "width": 1800
       }
     },
     {
-      "id": "5530d70a-14f9-497b-a338-c30e4ae77cd4",
-      "name": "Logistics | Record Delay Status",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
+      "id": "d125bd37-b70d-47f1-b1f4-0eb0a35e6aaa",
+      "name": "LOGISTICS 2 · Reserve & prepare",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
       "position": [
-        3520,
-        1040
+        -4600,
+        -4500
       ],
       "parameters": {
-        "method": "POST",
-        "url": "={{ $('Workflow Config').first().json.shopBaseUrl + '/api/automation/orders/' + encodeURIComponent($('Get Order').first().json.id) + '/delivery' }}",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "ngrok-skip-browser-warning",
-              "value": "true"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "{\"status\":\"delayed\"}",
-        "options": {}
-      },
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "UgB67LNiMKERsMAQ",
-          "name": "Header Auth account"
-        }
+        "content": "# 2 · Reserve stock and prepare the parcel\n\nThe shop API checks live stock; reservation rechecks and deducts it atomically. A warehouse task appears in Manager → Warehouse. Staff pick, verify and pack it before marking it ready; n8n polls every 5 seconds (up to 20 minutes).",
+        "height": 170,
+        "width": 1800
       }
     },
     {
-      "id": "9bcc9891-4535-4acd-b539-ee91ad924bcb",
-      "name": "Logistics | Record Delivered Status",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
+      "id": "446bde24-2504-4529-8b5f-c3c6fbbc591c",
+      "name": "LOGISTICS 3 · Ship & track",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
       "position": [
-        3520,
-        800
+        -2700,
+        -4500
       ],
       "parameters": {
-        "method": "POST",
-        "url": "={{ $('Workflow Config').first().json.shopBaseUrl + '/api/automation/orders/' + encodeURIComponent($('Get Order').first().json.id) + '/delivery' }}",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "ngrok-skip-browser-warning",
-              "value": "true"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "{\"status\":\"delivered\"}",
-        "options": {}
-      },
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "UgB67LNiMKERsMAQ",
-          "name": "Header Auth account"
-        }
+        "content": "# 3 · Create a demo shipment and track it\n\nWhen warehouse status is ready, the shop creates a demo tracking number. Delivery updates are read from Manager → Shipping every 5 seconds (up to 20 minutes). No carrier is contacted and no customer email is sent.",
+        "height": 170,
+        "width": 1800
       }
     },
     {
-      "id": "537d0935-99da-49d0-a081-fb8cd99f46c7",
-      "name": "Logistics | Reconcile Demo Payment",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
+      "id": "7d5e1a2e-002b-4175-9189-303a0ef56b43",
+      "name": "LOGISTICS 4 · Close or review",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
       "position": [
-        4240,
-        800
+        -800,
+        -4500
       ],
       "parameters": {
-        "method": "POST",
-        "url": "={{ $('Workflow Config').first().json.shopBaseUrl + '/api/automation/orders/' + encodeURIComponent($('Get Order').first().json.id) + '/reconcile' }}",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "ngrok-skip-browser-warning",
-              "value": "true"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "{}",
-        "options": {}
-      },
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "UgB67LNiMKERsMAQ",
-          "name": "Header Auth account"
-        }
-      }
-    },
-    {
-      "id": "958a0774-76af-45a0-87d3-d623e1a87dd7",
-      "name": "Logistics | Record Human Review",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        1600,
-        1360
-      ],
-      "parameters": {
-        "method": "POST",
-        "url": "={{ $('Workflow Config').first().json.shopBaseUrl + '/api/automation/orders/' + encodeURIComponent($('Get Order').first().json.id) + '/escalate' }}",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "ngrok-skip-browser-warning",
-              "value": "true"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ reason: $json.discrepancyReason || $json.errors?.join('; ') || $json.stockErrors?.join('; ') || $json.warehouse_status || $json.status || 'Logistics requires human review' }) }}",
-        "options": {}
-      },
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "UgB67LNiMKERsMAQ",
-          "name": "Header Auth account"
-        }
-      }
-    },
-    {
-      "id": "673d4ff1-7298-4843-968b-d7f5a4cc536",
-      "name": "Support | Reconstruct Thread",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        -2208,
-        128
-      ],
-      "notes": "Rebuild the conversation transcript in message order from the persistent shop context API response.",
-      "parameters": {
-        "jsCode": "const context = $input.first().json;\nconst messages = Array.isArray(context.messages) ? context.messages : [];\nconst reconstructedThread = messages.map((message) => {\n  const role = String(message.role || 'customer').toUpperCase();\n  const createdAt = message.at || '';\n  const content = String(message.content || message.message || '');\n  return `${role} (${createdAt}): ${content}`;\n}).join('\\n');\nreturn [{json:{...context,reconstructedThread,messageCount:messages.length,threadReconstructed:messages.length > 0}}];"
+        "content": "# 4 · Close the order or review an exception\n\nDelivered orders update the shop and reconcile demo payment. Address, stock, warehouse, delivery and payment problems are recorded for human review in Manager → Orders. Gmail notification nodes remain disabled.",
+        "height": 170,
+        "width": 1800
       }
     }
   ],
@@ -3207,6 +2764,17 @@
     ]
   },
   "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get row(s)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Message a model": {
       "main": [
         [
@@ -3355,7 +2923,13 @@
             "index": 0
           }
         ],
-        []
+        [
+          {
+            "node": "Reply to a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Call 'Order Lookup Tool'": {
@@ -3431,250 +3005,23 @@
         ]
       ]
     },
-    "Get Order": {
+    "If2": {
       "main": [
         [
           {
-            "node": "Validate Order",
+            "node": "Reply to a message",
             "type": "main",
             "index": 0
-          }
-        ]
-      ]
-    },
-    "Validate Order": {
-      "main": [
-        [
+          },
           {
-            "node": "Check Duplicate",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Check Duplicate": {
-      "main": [
-        [
-          {
-            "node": "Is Order Valid",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Is Order Valid": {
-      "main": [
-        [
-          {
-            "node": "Send Order To Inventory & Warehouse",
+            "node": "Send a message1",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Logistics | Record Human Review",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Check Stock": {
-      "main": [
-        [
-          {
-            "node": "Is Stock Available",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Is Stock Available": {
-      "main": [
-        [
-          {
-            "node": "INV | Reserve Stock",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "INV | Record Stock Issue",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Reserve Stock": {
-      "main": [
-        [
-          {
-            "node": "Update Inventory",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Update Inventory": {
-      "main": [
-        [
-          {
-            "node": "Update Product Availability",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Update Product Availability": {
-      "main": [
-        [
-          {
-            "node": "Create Warehouse Task",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Check Warehouse Status": {
-      "main": [
-        [
-          {
-            "node": "Route Warehouse Status",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Route Warehouse Status": {
-      "main": [
-        [
-          {
-            "node": "Logistics | Create Demo Shipment",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Wait For Warehouse Update",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Logistics | Record Human Review",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Logistics | Record Human Review",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Create Shipment": {
-      "main": [
-        [
-          {
-            "node": "Get Tracking Number",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Get Tracking Number": {
-      "main": [
-        [
-          {
-            "node": "Update Order Shipped",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Get Delivery Status": {
-      "main": [
-        [
-          {
-            "node": "Route Delivery Status",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Route Delivery Status": {
-      "main": [
-        [
-          {
-            "node": "Logistics | Record Transit Status",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Logistics | Record Delivered Status",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Logistics | Record Delay Status",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Logistics | Record Human Review",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Logistics | Record Human Review",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Update Order In Transit": {
-      "main": [
-        [
-          {
-            "node": "Wait Before Status Check",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Reconcile Payment": {
-      "main": [
-        [
-          {
-            "node": "Is Payment Consistent",
+            "node": "Reply to a message",
             "type": "main",
             "index": 0
           }
@@ -3863,6 +3210,17 @@
         ]
       ]
     },
+    "OH Sync Confirmation State": {
+      "main": [
+        [
+          {
+            "node": "OH Send Confirmation Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "OH Hand Off To Original Logistics": {
       "main": [
         [
@@ -3929,6 +3287,17 @@
         ]
       ]
     },
+    "Get Order": {
+      "main": [
+        [
+          {
+            "node": "Validate Order",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Test Manually": {
       "main": [
         [
@@ -3940,11 +3309,40 @@
         ]
       ]
     },
-    "INV | Load Order": {
+    "Validate Order": {
       "main": [
         [
           {
-            "node": "Get Order",
+            "node": "Check Duplicate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Duplicate": {
+      "main": [
+        [
+          {
+            "node": "Is Order Valid",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Order Valid": {
+      "main": [
+        [
+          {
+            "node": "Send Order To Inventory & Warehouse",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Escalate To Human",
             "type": "main",
             "index": 0
           }
@@ -3955,17 +3353,6 @@
       "main": [
         [
           {
-            "node": "INV | Check Stock",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "INV | Check Stock": {
-      "main": [
-        [
-          {
             "node": "Check Stock",
             "type": "main",
             "index": 0
@@ -3973,7 +3360,18 @@
         ]
       ]
     },
-    "INV | Reserve Stock": {
+    "Check Stock": {
+      "main": [
+        [
+          {
+            "node": "Is Stock Available",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Stock Available": {
       "main": [
         [
           {
@@ -3981,21 +3379,50 @@
             "type": "main",
             "index": 0
           }
-        ]
-      ]
-    },
-    "Create Warehouse Task": {
-      "main": [
+        ],
         [
           {
-            "node": "INV | Create Warehouse Task",
+            "node": "Escalate To Human",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "INV | Create Warehouse Task": {
+    "Reserve Stock": {
+      "main": [
+        [
+          {
+            "node": "Reservation Succeeded",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Shop reservation already updates stock": {
+      "main": [
+        [
+          {
+            "node": "Shop already saved availability",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Shop already saved availability": {
+      "main": [
+        [
+          {
+            "node": "Track shop warehouse task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Track shop warehouse task": {
       "main": [
         [
           {
@@ -4010,87 +3437,25 @@
       "main": [
         [
           {
-            "node": "INV | Read Warehouse Status",
+            "node": "Read Warehouse From Shop",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "INV | Read Warehouse Status": {
+    "Check Warehouse Status": {
       "main": [
         [
           {
-            "node": "Check Warehouse Status",
+            "node": "Route Warehouse Status",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Workflow Config": {
-      "main": [
-        [
-          {
-            "node": "Route Shop Event",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Route Shop Event": {
-      "main": [
-        [
-          {
-            "node": "Support | Load Ticket and Order",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "INV | Load Order",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Support | Ticket Created": {
-      "main": [
-        [
-          {
-            "node": "Workflow Config",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Support | Load Ticket and Order": {
-      "main": [
-        [
-          {
-            "node": "Support | Reconstruct Thread",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Support | Triage Ticket": {
-      "main": [
-        [
-          {
-            "node": "Support | Queue Draft in Demo Outbox",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Logistics | Create Demo Shipment": {
+    "Route Warehouse Status": {
       "main": [
         [
           {
@@ -4098,88 +3463,53 @@
             "type": "main",
             "index": 0
           }
-        ]
-      ]
-    },
-    "Wait Before Status Check": {
-      "main": [
+        ],
         [
           {
-            "node": "Logistics | Read Simulated Shipment",
+            "node": "Wait For Warehouse Update",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Escalate To Human",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Escalate To Human",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Logistics | Read Simulated Shipment": {
+    "Create Shipment": {
       "main": [
         [
           {
-            "node": "Get Delivery Status",
+            "node": "Get Tracking Number",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Logistics | Record Transit Status": {
+    "Get Tracking Number": {
       "main": [
         [
           {
-            "node": "Update Order In Transit",
+            "node": "Shipment already saved by shop",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Logistics | Record Delay Status": {
-      "main": [
-        [
-          {
-            "node": "Update Order Delayed",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Logistics | Record Delivered Status": {
-      "main": [
-        [
-          {
-            "node": "Update Order Delivered",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Logistics | Reconcile Demo Payment": {
-      "main": [
-        [
-          {
-            "node": "Reconcile Payment",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Is Payment Consistent": {
-      "main": [
-        null,
-        [
-          {
-            "node": "Logistics | Record Human Review",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Update Order Shipped": {
+    "Shipment already saved by shop": {
       "main": [
         [
           {
@@ -4190,7 +3520,68 @@
         ]
       ]
     },
-    "Update Order Delayed": {
+    "Wait Before Status Check": {
+      "main": [
+        [
+          {
+            "node": "Read Shipment From Shop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check delivery status and timeout": {
+      "main": [
+        [
+          {
+            "node": "Route Delivery Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Delivery Status": {
+      "main": [
+        [
+          {
+            "node": "Transit status already saved",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update Order Delivered",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Delay status already saved",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Escalate To Human",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Escalate To Human",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transit status already saved": {
       "main": [
         [
           {
@@ -4205,18 +3596,92 @@
       "main": [
         [
           {
-            "node": "Logistics | Reconcile Demo Payment",
+            "node": "Reconcile Payment",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Support | Reconstruct Thread": {
+    "Reconcile Payment": {
       "main": [
         [
           {
-            "node": "Support | Triage Ticket",
+            "node": "Is Payment Consistent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Payment Consistent": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Escalate To Human",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delay status already saved": {
+      "main": [
+        [
+          {
+            "node": "Wait Before Status Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Workflow Config": {
+      "main": [
+        [
+          {
+            "node": "Get Order",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reservation Succeeded": {
+      "main": [
+        [
+          {
+            "node": "Shop reservation already updates stock",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Escalate To Human",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Warehouse From Shop": {
+      "main": [
+        [
+          {
+            "node": "Check Warehouse Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Shipment From Shop": {
+      "main": [
+        [
+          {
+            "node": "Check delivery status and timeout",
             "type": "main",
             "index": 0
           }
@@ -4227,212 +3692,72 @@
   "active": false,
   "settings": {
     "executionOrder": "v1",
-    "binaryMode": "separate",
-    "availableInMCP": true
-  },
-  "meta": {
-    "templateCredsSetupCompleted": true,
-    "aiBuilderAssisted": true,
-    "builderVariant": "mcp"
+    "binaryMode": "separate"
   },
   "nodeGroups": [
     {
       "id": "35b0ee36-aba4-4e31-b9a5-8a9868a47bc8",
       "name": "Validate order",
-      "nodeNames": [
-        "Get Order",
-        "Validate Order",
-        "Check Duplicate",
-        "Is Order Valid",
-        "INV | Load Order"
+      "nodeIds": [
+        "5173a95d-410b-4220-9cf1-4e47ec90d711",
+        "60ecdb9b-ec16-43a2-8099-b856bf327172",
+        "74f378a0-ceb9-4fce-b0e5-e0cc02c54d53",
+        "800c9e24-a63f-48f0-8106-ef7b6e0def5b"
       ],
-      "description": "Loads and checks the live order, payment totals and duplicates before stock handling."
+      "description": "Loads the live shop order, checks payment, address and totals, blocks duplicates, and sends invalid orders to human review."
     },
     {
       "id": "8d312172-8925-46f2-b3be-fa8f8e0c1d5a",
       "name": "Confirm stock availability",
-      "nodeNames": [
-        "Send Order To Inventory & Warehouse",
-        "INV | Check Stock",
-        "Check Stock",
-        "Is Stock Available"
+      "nodeIds": [
+        "f356fd89-bc41-4746-a1a1-ece5197d5afb",
+        "d6da7785-3050-428c-b2e2-befdd39c1ce9",
+        "d2c3065c-5620-4e15-9117-c3d9834dad74"
       ],
-      "description": "Checks each live order against current website inventory before reservation."
+      "description": "Checks current shop inventory and reserves it atomically through the shop API."
+    },
+    {
+      "id": "d49249af-365d-4952-b3e1-66a576783654",
+      "name": "Prepare order in warehouse",
+      "nodeIds": [
+        "e8084cb6-5518-485e-b325-7acda3e53015",
+        "1fbda410-5fc1-4899-8434-b79c7277c1e1",
+        "d66926e2-b39b-4130-ac60-4d4d5a827f39",
+        "35ed4a44-dc44-4f8d-b78b-3e0d765caf84",
+        "c85f75e7-67ba-467b-8e15-e9f73dbfb029",
+        "9796d61c-bfa0-422a-a9ed-c2a0792a6c66",
+        "7a99ad1a-f555-4384-892e-31f636d50a44"
+      ],
+      "description": "Creates the shop warehouse task. Staff pick, verify and pack it in Manager → Warehouse; n8n polls for ready or an issue."
     },
     {
       "id": "2be594f0-780c-42c5-915b-c1c3a427765b",
       "name": "Ship & track delivery",
-      "nodeNames": [
-        "Logistics | Create Demo Shipment",
-        "Create Shipment",
-        "Get Tracking Number",
-        "Update Order Shipped",
-        "Wait Before Status Check",
-        "Logistics | Read Simulated Shipment",
-        "Get Delivery Status",
-        "Route Delivery Status",
-        "Logistics | Record Transit Status",
-        "Update Order In Transit",
-        "Logistics | Record Delay Status",
-        "Update Order Delayed"
+      "nodeIds": [
+        "9d51d059-ef00-49e3-a8d9-56a6666f618a",
+        "d0544c40-9b39-44f1-8c12-1a916dfb461e",
+        "08c9eb4b-abf8-40f3-9707-3e01018509bb",
+        "241f50be-853b-42d1-b829-c89bc72eb79c",
+        "d159eeec-a3b0-4344-9e22-bec5bc30129c",
+        "82249599-4e6d-4eac-8edf-961742d5da0e",
+        "56aecc78-9f54-4c44-b2df-115ab76a2dec",
+        "c1c80817-1f32-45be-b654-26b41a2c83ec",
+        "fbdef743-13a6-41af-8d8c-b3a6fa9946bb",
+        "ed19372b-60df-4ea5-b851-da0a78efc773"
       ],
-      "description": "Creates a demo shipment, polls saved delivery updates, and records transit or delay status."
+      "description": "Creates a demo shipment in the shop and polls saved delivery updates. There is no real courier or email."
     },
     {
-      "id": "d69fc3be-4693-4083-be6e-c33c55fbad14",
-      "name": "Prepare order in warehouse",
-      "nodeNames": [
-        "INV | Reserve Stock",
-        "Reserve Stock",
-        "Update Inventory",
-        "Update Product Availability",
-        "Create Warehouse Task",
-        "INV | Create Warehouse Task",
-        "Wait For Warehouse Update",
-        "INV | Read Warehouse Status",
-        "Check Warehouse Status",
-        "Route Warehouse Status"
-      ],
-      "description": "Reserves stock through the shop API, creates a warehouse task, then routes its saved status."
-    },
-    {
-      "id": "9ae66d15-68c0-45c7-928c-daa586b8f4dd",
-      "name": "Shop event routing",
-      "nodeNames": [
-        "Workflow Config",
-        "Route Shop Event"
-      ],
-      "description": "Routes website support tickets to the safe draft queue and order events to fulfillment."
-    },
-    {
-      "id": "ed7072b6-bcb5-427a-bdad-36457810fa88",
-      "name": "Website support triage",
-      "nodeNames": [
-        "Support | Load Ticket and Order",
-        "Support | Reconstruct Thread",
-        "Support | Triage Ticket",
-        "Support | Queue Draft in Demo Outbox"
-      ],
-      "description": "Loads ticket and order context, triages the request, and queues a draft for human review."
-    },
-    {
-      "id": "f7d1ed86-6c07-45d0-93be-808ca4206e5b",
+      "id": "7bb2244b-467f-44de-96ed-23279e47aa83",
       "name": "Confirm delivery & reconcile",
-      "nodeNames": [
-        "Logistics | Record Delivered Status",
-        "Update Order Delivered",
-        "Logistics | Reconcile Demo Payment",
-        "Reconcile Payment",
-        "Is Payment Consistent"
+      "nodeIds": [
+        "d7ee5a24-96e9-4325-980b-3f270be8f05c",
+        "67b5b158-4fbc-440d-ae6a-356db722cd25",
+        "b9a38faa-d845-4dd9-8be9-472c945e277a",
+        "3d86ce02-cffb-49f8-a7ae-f0878c2fb89a",
+        "317bbfac-bdf9-4d3a-96c4-719efa25468f"
       ],
-      "description": "Applies simulated delivery, reconciles demo payment, and records any mismatch."
-    },
-    {
-      "id": "b694f040-43f5-4525-afc3-1f1fa85d6b5c",
-      "name": "Support conversation intake",
-      "nodeNames": [
-        "Get row(s)1",
-        "If1",
-        "Edit Fields1",
-        "Insert row1",
-        "Message a model",
-        "Update row(s)1",
-        "Switch"
-      ],
-      "description": "Loads saved conversation context, classifies the message, and routes it to the assistant."
-    },
-    {
-      "id": "b158bdba-d199-493a-a3a2-79c7aa605ea8",
-      "name": "Knowledge base indexing",
-      "nodeNames": [
-        "Download file",
-        "Extract from File",
-        "Simple Vector Store",
-        "Default Data Loader1",
-        "Embeddings Google Gemini"
-      ],
-      "description": "Extracts a source document and indexes it for the support knowledge base."
-    },
-    {
-      "id": "aecccd5a-4c98-4343-a0d7-bd7e8248f959",
-      "name": "Order event intake",
-      "nodeNames": [
-        "OH Configuration",
-        "OH Get Live Order",
-        "OH Decide",
-        "OH Sync Lookup Table",
-        "OH Route Event"
-      ],
-      "description": "Reads each website order event and routes it to validation, stock handling, or logistics."
-    },
-    {
-      "id": "de0ad8db-0f04-4ea5-a10d-ad49f9a5e156",
-      "name": "Order validation and review",
-      "nodeNames": [
-        "OH Validate Customer Payment Totals",
-        "OH Is Valid"
-      ],
-      "description": "Checks payment totals and routes invalid orders for human review."
-    },
-    {
-      "id": "14e8f218-63f8-480a-b660-97230125babc",
-      "name": "Order stock check",
-      "nodeNames": [
-        "OH Check Stock",
-        "OH Stock Available"
-      ],
-      "description": "Checks live order stock before confirmation or logistics handoff."
-    },
-    {
-      "id": "e8dbbf10-a62f-4346-86e6-76447578077b",
-      "name": "Customer confirmation state",
-      "nodeNames": [
-        "OH Set Awaiting Confirmation",
-        "OH Sync Confirmation State"
-      ],
-      "description": "Saves awaiting-confirmation status and mirrors it to the lookup table."
-    },
-    {
-      "id": "4c36e55c-6256-49d9-b21d-61f7fb7fbac2",
-      "name": "Original logistics handoff",
-      "nodeNames": [
-        "OH Hand Off To Original Logistics",
-        "OH Record Accepted Handoff"
-      ],
-      "description": "Calls the existing logistics webhook and records the accepted handoff."
-    },
-    {
-      "id": "37fdf7af-5a1c-4a94-832b-fb304df4b24a",
-      "name": "Confirmation followups",
-      "nodeNames": [
-        "OH Followup Configuration",
-        "OH List Pending Orders",
-        "OH Choose Due Followups",
-        "OH Apply Followup"
-      ],
-      "description": "Finds due demo reminders and applies them through the shop API."
-    },
-    {
-      "id": "4aefc31b-5ebf-433d-a47c-e1de5ca3eb2a",
-      "name": "Workflow caller lookup",
-      "nodeNames": [
-        "Get row(s)",
-        "Edit Fields"
-      ],
-      "description": "Looks up the order context supplied by a calling workflow."
-    },
-    {
-      "id": "a43d93f1-8688-486d-aaa8-3d4ae7b43818",
-      "name": "AI support decision",
-      "nodeNames": [
-        "AI Agent",
-        "Google Gemini Chat Model",
-        "Simple Vector Store1",
-        "Embeddings Google Gemini1",
-        "Call 'Order Lookup Tool'",
-        "If"
-      ],
-      "description": "Uses order lookup and approved context to prepare a response or route human review."
+      "description": "Saves delivered status in the shop and reconciles demo payment; mismatches go to human review."
     }
   ],
   "tags": []

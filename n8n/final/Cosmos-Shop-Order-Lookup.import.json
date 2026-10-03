@@ -1,0 +1,91 @@
+{
+  "name": "Cosmos Shop Order Lookup",
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true
+  },
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "tags": [],
+  "nodes": [
+    {
+      "id": "3acce1ac-6444-4e43-a99d-04f875b0b1cc",
+      "name": "When Executed by Another Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "inputSource": "workflowInputs",
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "order_id",
+              "type": "string"
+            },
+            {
+              "name": "customer_email",
+              "type": "string"
+            },
+            {
+              "name": "shopBaseUrl",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "44b7d5d8-00ec-4bbf-ae44-f0634c558992",
+      "name": "Lookup Shop Order",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        224,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.shopBaseUrl + \"/api/automation/order-lookup\" }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ order_id: $json.order_id, customer_email: $json.customer_email }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "UgB67LNiMKERsMAQ",
+          "name": "Header Auth account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Lookup Shop Order",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "groups": []
+}

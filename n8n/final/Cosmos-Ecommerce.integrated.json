@@ -449,8 +449,10 @@
         "description": "Search the orders database using the customer's order ID. Use this tool when the customer asks about the status, tracking number, or estimated delivery of a specific order. Never invent order information.",
         "workflowId": {
           "__rl": true,
-          "mode": "id",
-          "value": "8cf0BBVr8yhEylqW"
+          "value": "8cf0BBVr8yhEylqW",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/8cf0BBVr8yhEylqW",
+          "cachedResultName": "Cosmos Shop Order Lookup"
         },
         "workflowInputs": {
           "mappingMode": "defineBelow",
@@ -513,8 +515,10 @@
         "operation": "get",
         "dataTableId": {
           "__rl": true,
-          "mode": "id",
-          "value": "5F3pUUYCSQ4Uw1Z6"
+          "value": "5F3pUUYCSQ4Uw1Z6",
+          "mode": "list",
+          "cachedResultName": "conversation_context",
+          "cachedResultUrl": "/projects/OVbqhMM15DSm48Kn/datatables/5F3pUUYCSQ4Uw1Z6"
         },
         "filters": {
           "conditions": [
@@ -599,8 +603,10 @@
       "parameters": {
         "dataTableId": {
           "__rl": true,
-          "mode": "id",
-          "value": "5F3pUUYCSQ4Uw1Z6"
+          "value": "5F3pUUYCSQ4Uw1Z6",
+          "mode": "list",
+          "cachedResultName": "conversation_context",
+          "cachedResultUrl": "/projects/OVbqhMM15DSm48Kn/datatables/5F3pUUYCSQ4Uw1Z6"
         },
         "columns": {
           "mappingMode": "defineBelow",
@@ -734,8 +740,10 @@
         "operation": "update",
         "dataTableId": {
           "__rl": true,
-          "mode": "id",
-          "value": "5F3pUUYCSQ4Uw1Z6"
+          "value": "5F3pUUYCSQ4Uw1Z6",
+          "mode": "list",
+          "cachedResultName": "conversation_context",
+          "cachedResultUrl": "/projects/OVbqhMM15DSm48Kn/datatables/5F3pUUYCSQ4Uw1Z6"
         },
         "filters": {
           "conditions": [
@@ -1748,8 +1756,10 @@
         "operation": "get",
         "dataTableId": {
           "__rl": true,
-          "mode": "id",
-          "value": "2oakhQTHCbyc9DIp"
+          "value": "2oakhQTHCbyc9DIp",
+          "mode": "list",
+          "cachedResultName": "order",
+          "cachedResultUrl": "/projects/OVbqhMM15DSm48Kn/datatables/2oakhQTHCbyc9DIp"
         },
         "filters": {
           "conditions": [
@@ -1838,7 +1848,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const event=$input.first().json.body||{};\nif(!event.order_id && !event.order?.id) return [];\nif(event.type && !['order.created','order.validated','order.confirmed','order.cancelled','order.shipped','shipment.updated','payment.reconciled','inventory.reserved','warehouse.ready','warehouse.updated','order.review_required'].includes(event.type))return [];\nreturn [{json:{event,orderId:String(event.order_id||event.order.id),shopBaseUrl:\"https://erik-unbarking-foolhardily.ngrok-free.dev\",logisticsWebhookUrl:\"https://cosmos-team-5ia.app.n8n.cloud/webhook/order-ready-for-shipment\"}}];"
+        "jsCode": "const event=$input.first().json.body||{};\nif(!event.order_id && !event.order?.id) return [];\nif(event.type && !['order.created','order.validated','order.confirmed','order.cancelled','order.shipped','shipment.updated','payment.reconciled','inventory.reserved','warehouse.ready','warehouse.updated','order.review_required'].includes(event.type))return [];\nreturn [{json:{event,orderId:String(event.order_id||event.order.id),shopBaseUrl:'https://erik-unbarking-foolhardily.ngrok-free.dev',logisticsWebhookUrl:'https://cosmos-team-5ia.app.n8n.cloud/webhook/order-ready-for-shipment'}}];"
       },
       "id": "956b2032-8748-4275-a3ff-f5b7236ba4f3",
       "name": "OH Configuration",
@@ -2262,8 +2272,8 @@
         "operation": "upsert",
         "dataTableId": {
           "__rl": true,
-          "mode": "id",
-          "value": "2oakhQTHCbyc9DIp"
+          "value": "2oakhQTHCbyc9DIp",
+          "mode": "id"
         },
         "filters": {
           "conditions": [
@@ -2477,7 +2487,7 @@
     },
     {
       "parameters": {
-        "jsCode": "return [{json:{shopBaseUrl:\"https://erik-unbarking-foolhardily.ngrok-free.dev\",remindAfterHours:24,reviewAfterHours:72}}];"
+        "jsCode": "return [{json:{shopBaseUrl:'https://erik-unbarking-foolhardily.ngrok-free.dev',remindAfterHours:24,reviewAfterHours:72}}];"
       },
       "id": "bc0c119e-7664-4059-815c-c836c34bb75a",
       "name": "OH Followup Configuration",
@@ -4224,12 +4234,13 @@
       ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate",
     "availableInMCP": true
   },
+  "versionId": "5fa54a98-7b7f-4e0e-9270-0e96993a8091",
   "meta": {
     "templateCredsSetupCompleted": true,
     "aiBuilderAssisted": true,
@@ -4435,5 +4446,6 @@
       "description": "Uses order lookup and approved context to prepare a response or route human review."
     }
   ],
+  "id": "mPhy7IFRIz30yzKq",
   "tags": []
 }
