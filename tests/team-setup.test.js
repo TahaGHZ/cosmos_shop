@@ -6,7 +6,7 @@ import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 
-test('team launcher configures an existing isolated store and retains tested workflow behavior', async () => {
+test('team launcher configures an existing isolated store and generates the integrated workflow', async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cosmos-team-test-'));
   const config = JSON.parse(fs.readFileSync('team.config.json', 'utf8'));
   fs.writeFileSync(path.join(dir, 'shop.json'), JSON.stringify({ products: [], orders: [{ id: 'LC-SENTINEL' }], tickets: [], events: [], notifications: [], settings: { webhookUrl: 'https://old.example/webhook', marker: 'retain me' } }));
@@ -25,18 +25,27 @@ test('team launcher configures an existing isolated store and retains tested wor
     assert.equal(settings.webhookUrl, config.n8nBaseUrl + '/webhook/larkspur-order-handling');
     assert.equal(settings.publicBaseUrl, config.shopBaseUrl);
     assert.equal(settings.logisticsWebhookUrl, '');
-    assert.equal(settings.supportWebhookUrl, '');
+    assert.equal(settings.supportWebhookUrl, config.n8nBaseUrl + '/webhook/larkspur-support');
+    assert.equal(settings.workflowEditorUrl, config.n8nBaseUrl + '/workflow/' + config.workflowId);
     assert.equal(settings.marker, 'retain me');
     const store = JSON.parse(fs.readFileSync(path.join(dir, 'shop.json'), 'utf8'));
     assert.equal(store.orders[0].id, 'LC-SENTINEL');
-    const source = JSON.parse(fs.readFileSync('n8n/final/Cosmos-Ecommerce.tested.json', 'utf8'));
+    const source = JSON.parse(fs.readFileSync('n8n/final/Cosmos-Ecommerce.integrated.json', 'utf8'));
     const generated = JSON.parse(fs.readFileSync('n8n/final/Cosmos-Ecommerce.import.json', 'utf8'));
-    assert.equal(generated.nodes.length, 82);
+    assert.equal(generated.nodes.length, source.nodes.length);
     assert.equal(generated.active, false);
     assert.deepEqual(generated.connections, source.connections);
     assert.deepEqual(generated.nodes.filter(n => n.disabled).map(n => n.name), source.nodes.filter(n => n.disabled).map(n => n.name));
+    assert.equal(generated.nodes.find(n => n.name === "Call 'Order Lookup Tool'").parameters.workflowId.value, config.orderLookupWorkflowId);
+    assert.equal(generated.nodes.find(n => n.name === "Call 'Order Lookup Tool'").parameters.workflowInputs.value.shopBaseUrl, config.shopBaseUrl);
+    for (const node of generated.nodes.filter(n => ['OH Sync Lookup Table', 'OH Sync Confirmation State', 'Get row(s)'].includes(n.name))) assert.equal(node.parameters.dataTableId.value, config.orderTableId);
+    for (const node of generated.nodes.filter(n => ['Get row(s)1', 'Insert row1', 'Update row(s)1'].includes(n.name))) assert.equal(node.parameters.dataTableId.value, config.conversationTableId);
+    const lookupImport = JSON.parse(fs.readFileSync('n8n/final/Cosmos-Shop-Order-Lookup.import.json', 'utf8'));
+    assert.equal(lookupImport.active, false);
+    assert.equal(lookupImport.nodes.find(n => n.name === 'Lookup Shop Order').credentials.httpHeaderAuth.id, config.headerAuthCredentialId);
+    assert.equal(lookupImport.nodes.some(n => n.type === 'n8n-nodes-base.webhook'), false);
     for (const node of generated.nodes) {
-      if (!['OH Configuration', 'OH Followup Configuration', 'OH Sync Lookup Table', 'OH Sync Confirmation State'].includes(node.name) && !node.credentials?.httpHeaderAuth) assert.deepEqual(node, source.nodes.find(n => n.id === node.id));
+      if (!['OH Configuration', 'OH Followup Configuration', 'Workflow Config', 'OH Sync Lookup Table', 'OH Sync Confirmation State', 'Get row(s)', 'Get row(s)1', 'Insert row1', 'Update row(s)1', "Call 'Order Lookup Tool'"].includes(node.name) && !node.credentials?.httpHeaderAuth) assert.deepEqual(node, source.nodes.find(n => n.id === node.id));
     }
   } finally {
     if (child.exitCode === null) { const exited = once(child, 'exit'); child.kill(); await exited; }

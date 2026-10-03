@@ -3,8 +3,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomUUID, timingSafeEqual } from 'node:crypto';
+import { readJsonFile, writeJsonFileAtomic } from './storage.js';
 import {initializeUsers,currentUser,login,logout,register,safeUser} from './auth.js';
-import {workflowOrder,lookupOrder} from './integration.js';
+import {workflowOrder,lookupOrder,inspectOrder,orderEventDecision,dueFollowups,triageTicket} from './integration.js';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const port = Number(process.env.PORT || 3000);
@@ -22,12 +23,20 @@ const catalog = [
   ['wood-board', 'Kitchen companion board', 'Kitchen', 42, 10, 'Made for sharing.', '#b58d61', 'board'],
 ].map(([id,name,category,price,stock,description,color,shape]) => ({id,name,category,price,stock,description,color,shape}));
 const seed = () => ({ products: structuredClone(catalog), orders: [], tickets: [], events: [], notifications: [], settings: { webhookUrl: process.env.N8N_WEBHOOK_URL || '', publicBaseUrl: process.env.PUBLIC_BASE_URL || `http://localhost:${port}` } });
-let db = fs.existsSync(dbPath) ? JSON.parse(fs.readFileSync(dbPath, 'utf8')) : seed();
+let db = readJsonFile(dbPath, seed());
 initializeUsers(db);
+for (const ticket of db.tickets) {
+  ticket.threadId ||= `thread:${ticket.id}`;
+  ticket.messages ||= [
+    {id:`${ticket.id}:1`,role:'customer',content:ticket.message,at:ticket.createdAt,channel:'website'},
+    ...(ticket.replies||[]).map((reply,index)=>({id:`${ticket.id}:legacy:${index+1}`,role:reply.source==='customer'?'customer':'staff',content:reply.message,at:reply.at,channel:reply.source||'website'})),
+  ];
+}
 db.settings.automationKey=process.env.API_KEY||db.settings.automationKey||randomUUID();
 db.settings.logisticsWebhookUrl??='';
 db.settings.supportWebhookUrl??='';
-const save = () => fs.writeFileSync(dbPath, JSON.stringify(db, null, 2));
+db.settings.workflowEditorUrl??='';
+const save = () => writeJsonFileAtomic(dbPath, db);
 save();
 const fail = (message, status = 400) => { const error = new Error(message); error.status = status; throw error; };
 const findOrder = id => db.orders.find(o => o.id === id) || fail('Order not found', 404);
@@ -39,6 +48,12 @@ function event(type, order, extra = {}) {
   db.events.unshift(e); save();
   if (webhookUrl) setImmediate(() => deliver(e));
   return e;
+}
+function appendTicketMessage(ticket,role,content,channel='website'){
+  ticket.threadId ||= `thread:${ticket.id}`;
+  ticket.messages ||= [{id:`${ticket.id}:1`,role:'customer',content:ticket.message,at:ticket.createdAt,channel:'website'}];
+  const message={id:randomUUID(),role,content:content.trim(),at:new Date().toISOString(),channel};
+  ticket.messages.push(message);ticket.lastMessageAt=message.at;return message;
 }
 async function deliver(e) {
   const webhookUrl=e.type==='order.confirmed'&&db.settings.logisticsWebhookUrl?db.settings.logisticsWebhookUrl:e.type==='support.created'&&db.settings.supportWebhookUrl?db.settings.supportWebhookUrl:db.settings.webhookUrl;
@@ -56,7 +71,8 @@ async function deliver(e) {
 function action(o, name, b) {
   if (name === 'validate') {
     if (o.status !== 'received') return o;
-    if (o.payment.status !== 'authorized') { o.status='needs_review'; history(o,'Payment needs human review'); event('order.review_required',o); return o; }
+    const inspection=inspectOrder(o,db.products);
+    if(!inspection.valid){o.status='needs_review';o.reviewReason=inspection.errors.join('; ');history(o,`Order needs review: ${o.reviewReason}`);event('order.review_required',o,{reasons:inspection.errors});save();return o;}
     o.status='awaiting_confirmation'; history(o,'Order validated; waiting for customer confirmation'); notify(o,`Confirm your order: ${db.settings.publicBaseUrl}/?order=${o.id}&token=${o.confirmationToken}`); event('order.validated',o);
   } else if (name === 'remind') {
     if(o.status!=='awaiting_confirmation') fail('Only orders waiting for confirmation can be reminded',409);
@@ -74,7 +90,7 @@ function action(o, name, b) {
     const unavailable=o.items.filter(i => db.products.find(p=>p.id===i.productId).stock < i.quantity);
     if (unavailable.length) { o.status='needs_review'; history(o,'Insufficient stock; no inventory deducted'); event('order.review_required',o,{reason:'insufficient_stock'}); return o; }
     for(const i of o.items) db.products.find(p=>p.id===i.productId).stock-=i.quantity;
-    o.inventoryReserved=true; o.status='packing'; o.warehouse={status:'in_progress', taskId:`WH-${o.id}`, checklist:{picked:false,verified:false,packed:false}};
+    o.inventoryReserved=true; o.status='packing'; o.warehouse={status:'in_progress', taskId:`WH-${o.id}`, createdAt:new Date().toISOString(), checklist:{picked:false,verified:false,packed:false}};
     history(o,'Inventory reserved; warehouse task created'); event('inventory.reserved',o);
   } else if (name === 'warehouse') {
     if(o.status !== 'packing') fail('Only packing orders have an active warehouse task',409);
@@ -125,7 +141,7 @@ async function route(req,res) {
     const isPublic=req.method==='GET'&&['/api/products','/api/policies','/api/health'].includes(pathname);
     const tokenOrder=url.searchParams.get('token')||b.token;
     const own=(o)=>privileged||user&&o.customer.email.toLowerCase()===user.email||tokenOrder&&tokenOrder===o.confirmationToken;
-    const customerRoute=pathname==='/api/orders'||/^\/api\/orders\/[^/]+(?:\/(confirm|cancel))?$/.test(pathname)||pathname==='/api/support';
+    const customerRoute=pathname==='/api/orders'||/^\/api\/orders\/[^/]+(?:\/(confirm|cancel))?$/.test(pathname)||pathname==='/api/support'||/^\/api\/support\/[^/]+\/messages$/.test(pathname);
     if(!isPublic&&!privileged&&!user&&!tokenOrder)fail('Please sign in',401);
     if(!isPublic&&!privileged&&!customerRoute)fail('Admin access required',403);
     if(pathname.startsWith('/api/automation/')&&!automation)fail('Automation API key required',401);
@@ -133,13 +149,40 @@ async function route(req,res) {
     if(req.method==='GET' && pathname==='/api/health') return json({ok:true,demo:true});
     if(req.method==='GET' && pathname==='/api/policies') {const policyPath=path.join(root,'reference_docs','ecommerce_customer_support_kb (1).md');res.writeHead(200,{'content-type':'text/markdown; charset=utf-8'});return res.end(fs.readFileSync(policyPath));}
     if(pathname==='/api/automation/order-lookup'&&req.method==='POST'){if(!b.order_id||!b.customer_email)fail('order_id and customer_email are required');const o=db.orders.find(o=>o.id===String(b.order_id)&&o.customer.email.toLowerCase()===String(b.customer_email).trim().toLowerCase());return json(o?lookupOrder(o):{found:false,message:'No matching order for this customer'});}
+    if(pathname==='/api/automation/followups/run'&&req.method==='POST'){
+      const due=dueFollowups(db.orders);const applied=[];
+      for(const item of due){const o=findOrder(item.order_id);if(item.action==='remind')action(o,'remind',{});else{o.reviewReason=item.reason;history(o,item.reason);save();}applied.push(item);}
+      return json({checkedAt:new Date().toISOString(),applied});
+    }
+    const supportAuto=pathname.match(/^\/api\/automation\/support\/([^/]+)\/(context|triage|queue-draft)$/);
+    if(supportAuto){
+      const ticket=db.tickets.find(t=>t.id===supportAuto[1])||fail('Ticket not found',404);
+      const order=ticket.orderId?db.orders.find(o=>o.id===ticket.orderId):null;
+      if(supportAuto[2]==='context'&&req.method==='GET'){
+        const messages=ticket.messages?.length?ticket.messages:[{id:`${ticket.id}:1`,role:'customer',content:ticket.message,at:ticket.createdAt,channel:'website'}];
+        const transcript=messages.map(m=>`${m.role.toUpperCase()} (${m.at}): ${m.content}`).join('\n');
+        return json({ticket_id:ticket.id,thread_id:ticket.threadId||`thread:${ticket.id}`,email:ticket.email,order_id:ticket.orderId,current_message:messages.at(-1)?.content||ticket.message,messages,transcript,order:order?lookupOrder(order):{found:false,message:'No linked order'}});
+      }
+      if(supportAuto[2]==='queue-draft'&&req.method==='POST'){
+        if(!ticket.triage)fail('Triage the ticket before queuing a draft',409);
+        if(!ticket.draftQueuedAt){ticket.draftQueuedAt=new Date().toISOString();db.notifications.unshift({id:randomUUID(),ticketId:ticket.id,orderId:ticket.orderId,email:ticket.email,message:ticket.triage.suggestedReply,at:ticket.draftQueuedAt,simulated:true,draft:true});save();}
+        return json({ticket_id:ticket.id,queued:true,simulated:true,draftQueuedAt:ticket.draftQueuedAt});
+      }
+      if(supportAuto[2]!=='triage'||req.method!=='POST')fail('Unknown support action',404);
+      const messages=ticket.messages?.length?ticket.messages:[{id:`${ticket.id}:1`,role:'customer',content:ticket.message,at:ticket.createdAt,channel:'website'}];
+      const transcript=messages.map(m=>`${m.role.toUpperCase()} (${m.at}): ${m.content}`).join('\n');
+      ticket.triage={...triageTicket(ticket,order),threadReconstructed:b.thread_id===(ticket.threadId||`thread:${ticket.id}`)&&b.transcript===transcript&&Number(b.message_count)===messages.length,updatedAt:new Date().toISOString()};save();
+      return json({ticket_id:ticket.id,status:ticket.status,...ticket.triage});
+    }
     const auto=pathname.match(/^\/api\/automation\/orders\/([^/]+)(?:\/([^/]+))?$/);
     if(auto){const o=findOrder(auto[1]);if(req.method==='GET'&&!auto[2])return json(workflowOrder(o,db.settings.publicBaseUrl));
+      if(req.method==='GET'&&auto[2]==='validation')return json(inspectOrder(o,db.products,url.searchParams.get('phase')||'order'));
+      if(req.method==='GET'&&auto[2]==='decision')return json({...workflowOrder(o,db.settings.publicBaseUrl),handlerAction:orderEventDecision(o,url.searchParams.get('event')).action});
       if(req.method==='GET'&&auto[2]==='stock'){const stockLines=o.items.map(i=>{const p=db.products.find(p=>p.id===i.productId);return {sku:i.productId,name:i.name,requested:i.quantity,available:p.stock,sufficient:o.inventoryReserved||p.stock>=i.quantity};});return json({order_id:o.id,stockAvailable:stockLines.every(i=>i.sufficient),stockErrors:stockLines.filter(i=>!i.sufficient).map(i=>`Insufficient stock: ${i.sku}`),stockLines});}
-      if(req.method==='GET'&&auto[2]==='warehouse')return json({order_id:o.id,warehouse_task_id:o.warehouse?.taskId,warehouse_status:o.warehouse?.status==='in_progress'?'packaging':o.warehouse?.status==='issue'?'physical_discrepancy':o.warehouse?.status||'pending'});
-      if(req.method==='GET'&&auto[2]==='shipment'){if(!o.shipment)fail('Shipment not created',409);return json({order_id:o.id,shipment_id:o.shipment.id,tracking_number:o.shipment.trackingNumber,carrier:o.shipment.carrier,status:o.shipment.status,tracking_url:`${db.settings.publicBaseUrl}/?order=${o.id}`,estimated_delivery:o.shipment.estimatedDelivery});}
+      if(req.method==='GET'&&auto[2]==='warehouse'){const timedOut=o.warehouse?.status==='in_progress'&&o.warehouse.createdAt&&Date.now()-Date.parse(o.warehouse.createdAt)>=1200000;return json({order_id:o.id,warehouse_task_id:o.warehouse?.taskId,warehouse_status:timedOut?'warehouse_timeout':o.warehouse?.status==='in_progress'?'packaging':o.warehouse?.status==='issue'?'physical_discrepancy':o.warehouse?.status||'pending'});}
+      if(req.method==='GET'&&auto[2]==='shipment'){if(!o.shipment)fail('Shipment not created',409);const timedOut=['in_transit','delayed'].includes(o.shipment.status)&&Date.now()-Date.parse(o.shipment.createdAt)>=1200000;return json({order_id:o.id,shipment_id:o.shipment.id,tracking_number:o.shipment.trackingNumber,carrier:o.shipment.carrier,status:timedOut?'tracking_timeout':o.shipment.status,tracking_url:`${db.settings.publicBaseUrl}/?order=${o.id}`,estimated_delivery:o.shipment.estimatedDelivery});}
       if(req.method==='POST'&&auto[2]==='reconcile'){if(o.status!=='delivered')fail('Order must be delivered',409);const paid=o.payment.amount??o.total;const reconciled=['authorized','settled'].includes(o.payment.status)&&Math.abs(paid-o.total)<.01&&o.currency==='EUR';if(reconciled)action(o,'reconcile',{});return json({order_id:o.id,total_amount:o.total,paid_amount:paid,currency:o.currency,payment_status:reconciled?'paid':o.payment.status,reconciled,discrepancyReason:reconciled?null:'Payment does not match the order'});}
-      if(req.method==='POST'&&auto[2]==='escalate'){o.reviewReason=String(b.reason||'Workflow requested human review');history(o,o.reviewReason);save();return json({ok:true,order_id:o.id});}
+      if(req.method==='POST'&&auto[2]==='escalate'){const reason=String(b.reason||'Workflow requested human review');if(o.reviewReason!==reason){o.reviewReason=reason;history(o,reason);save();}return json({ok:true,order_id:o.id,reviewReason:o.reviewReason});}
       if(req.method==='POST'&&auto[2]==='handoff-record'){if(o.status!=='confirmed')fail('Only confirmed orders can be handed off',409);if(!o.logisticsHandoff)o.logisticsHandoff={acceptedAt:new Date().toISOString(),eventId:b.eventId||null};save();return json({ok:true,order_id:o.id,handoff:o.logisticsHandoff});}
       if(req.method==='POST'&&auto[2])return json(workflowOrder(action(o,auto[2],b),db.settings.publicBaseUrl));
     }
@@ -167,14 +210,33 @@ async function route(req,res) {
     if(pathname==='/api/inventory' && req.method==='GET') return json(db.products);
     const p=pathname.match(/^\/api\/inventory\/([^/]+)$/);
     if(p && req.method==='PATCH'){const product=db.products.find(i=>i.id===p[1])||fail('Product not found',404);if(!Number.isInteger(b.stock)||b.stock<0) fail('Stock must be a nonnegative integer');product.stock=b.stock;save();return json(product);}
-    if(pathname==='/api/support' && req.method==='GET') {if(!privileged&&!user)fail('Please sign in',401);return json(db.tickets.filter(t=>privileged||t.email===user.email));}
-    if(pathname==='/api/support' && req.method==='POST') {if(!privileged&&!user)fail('Please sign in to contact support',401);if(!privileged)b.email=user.email;if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(b.email||'') || !b.message?.trim()) fail('Email and message are required');if(b.orderId&&!own(findOrder(b.orderId)))fail('Order not found',404);const ticket={id:`T-${db.tickets.length+101}`,email:b.email,orderId:b.orderId||null,message:b.message.trim(),status:'open',createdAt:new Date().toISOString(),replies:[]};db.tickets.unshift(ticket);event('support.created',null,{ticket});return json(ticket,201);}
+    if(pathname==='/api/support' && req.method==='GET') {if(!privileged&&!user)fail('Please sign in',401);return json(db.tickets.filter(t=>privileged||t.email===user.email).map(t=>{if(privileged)return t;const {triage,...customerTicket}=t;return customerTicket;}));}
+    if(pathname==='/api/support' && req.method==='POST') {if(!privileged&&!user)fail('Please sign in to contact support',401);if(!privileged)b.email=user.email;if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(b.email||'') || !b.message?.trim()) fail('Email and message are required');if(b.orderId&&!own(findOrder(b.orderId)))fail('Order not found',404);const ticket={id:`T-${db.tickets.length+101}`,threadId:`thread:T-${db.tickets.length+101}`,email:b.email,orderId:b.orderId||null,message:b.message.trim(),status:'open',createdAt:new Date().toISOString(),replies:[],messages:[]};appendTicketMessage(ticket,'customer',ticket.message);db.tickets.unshift(ticket);event('support.created',null,{ticket:{id:ticket.id,threadId:ticket.threadId,email:ticket.email,orderId:ticket.orderId,message:ticket.message}});return json(ticket,201);}
+    const customerMessage=pathname.match(/^\/api\/support\/([^/]+)\/messages$/);
+    if(customerMessage&&req.method==='POST'){
+      const ticket=db.tickets.find(t=>t.id===customerMessage[1])||fail('Ticket not found',404);
+      if(!privileged&&ticket.email.toLowerCase()!==user.email.toLowerCase())fail('Ticket not found',404);
+      if(typeof b.message!=='string'||!b.message.trim())fail('Reply message required');
+      ticket.status=ticket.status==='resolved'?'open':ticket.status;
+      const message=appendTicketMessage(ticket,privileged?'staff':'customer',b.message,privileged?'manager':'website');
+      ticket.replies??=[];ticket.replies.push({message:message.content,at:message.at,source:message.role});
+      if(message.role==='customer')event('support.created',null,{ticket:{id:ticket.id,threadId:ticket.threadId,email:ticket.email,orderId:ticket.orderId,message:message.content,messageId:message.id}});
+      save();return json({ticket_id:ticket.id,thread_id:ticket.threadId,message,ticket});
+    }
     const reply=pathname.match(/^\/api\/support\/([^/]+)\/replies$/);
-    if(reply&&req.method==='POST'){const ticket=db.tickets.find(t=>t.id===reply[1])||fail('Ticket not found',404);if(typeof b.message!=='string'||!b.message.trim())fail('Reply message required');ticket.replies??=[];ticket.replies.push({message:b.message.trim(),at:new Date().toISOString(),source:automation?'n8n':'admin'});ticket.reply=b.message.trim();if(b.status){if(!['open','escalated','resolved'].includes(b.status))fail('Invalid ticket status');ticket.status=b.status;}save();return json(ticket);}
+    if(reply&&req.method==='POST'){const ticket=db.tickets.find(t=>t.id===reply[1])||fail('Ticket not found',404);if(typeof b.message!=='string'||!b.message.trim())fail('Reply message required');ticket.replies??=[];const message=appendTicketMessage(ticket,automation?'automation':'staff',b.message,automation?'n8n':'manager');ticket.replies.push({message:message.content,at:message.at,source:automation?'n8n':'admin'});ticket.reply=b.message.trim();if(b.status){if(!['open','escalated','resolved'].includes(b.status))fail('Invalid ticket status');ticket.status=b.status;}save();return json(ticket);}
     const t=pathname.match(/^\/api\/support\/([^/]+)$/);
-    if(t && req.method==='PATCH') {const ticket=db.tickets.find(i=>i.id===t[1])||fail('Ticket not found',404);if(!['open','escalated','resolved'].includes(b.status)) fail('Invalid ticket status');ticket.status=b.status;if(b.reply) ticket.reply=String(b.reply);save();return json(ticket);}
+    if(t && req.method==='PATCH') {const ticket=db.tickets.find(i=>i.id===t[1])||fail('Ticket not found',404);if(!['open','escalated','resolved'].includes(b.status)) fail('Invalid ticket status');ticket.status=b.status;if(b.reply){ticket.reply=String(b.reply);ticket.replies??=[];const message=appendTicketMessage(ticket,'staff',b.reply,'manager');ticket.replies.push({message:message.content,at:message.at,source:'admin'});}save();return json(ticket);}
+    if(pathname==='/api/crm'&&req.method==='GET'){
+      const customers=new Map();
+      const ensure=(email,name='')=>{const key=email.toLowerCase();if(!customers.has(key))customers.set(key,{email:key,name,orderCount:0,totalSpent:0,openTickets:0,orderIds:[],ticketIds:[],lastActivity:null});return customers.get(key);};
+      for(const u of db.users.filter(u=>u.role==='customer'))ensure(u.email,u.name);
+      for(const o of db.orders){const c=ensure(o.customer.email,o.customer.name);c.name||=o.customer.name;c.orderCount++;if(o.status==='delivered')c.totalSpent+=o.total;c.orderIds.push(o.id);if(!c.lastActivity||o.createdAt>c.lastActivity)c.lastActivity=o.createdAt;}
+      for(const t of db.tickets){const c=ensure(t.email);if(t.status!=='resolved')c.openTickets++;c.ticketIds.push(t.id);if(!c.lastActivity||t.createdAt>c.lastActivity)c.lastActivity=t.createdAt;}
+      return json([...customers.values()].sort((a,b)=>(b.lastActivity||'').localeCompare(a.lastActivity||'')));
+    }
     if(req.method==='GET' && ['/api/events','/api/notifications','/api/settings'].includes(pathname)) return json(db[pathname.slice(5)]);
-    if(pathname==='/api/settings' && req.method==='PATCH'){for(const k of ['webhookUrl','logisticsWebhookUrl','supportWebhookUrl','publicBaseUrl'])if(b[k]!==undefined){if(b[k] || k==='publicBaseUrl'){let u;try{u=new URL(b[k]);}catch{fail('Invalid URL');}if(!['http:','https:'].includes(u.protocol))fail('Use an HTTP or HTTPS URL');}db.settings[k]=b[k].replace(/\/$/,'');}save();return json(db.settings);}
+    if(pathname==='/api/settings' && req.method==='PATCH'){for(const k of ['webhookUrl','logisticsWebhookUrl','supportWebhookUrl','publicBaseUrl','workflowEditorUrl'])if(b[k]!==undefined){if(b[k] || k==='publicBaseUrl'){let u;try{u=new URL(b[k]);}catch{fail('Invalid URL');}if(!['http:','https:'].includes(u.protocol))fail('Use an HTTP or HTTPS URL');}db.settings[k]=b[k].replace(/\/$/,'');}save();return json(db.settings);}
     const e=pathname.match(/^\/api\/events\/([^/]+)\/retry$/);
     if(e && req.method==='POST'){const evt=db.events.find(i=>i.id===e[1])||fail('Event not found',404);await deliver(evt);return json(evt);}
     return json({error:'Endpoint not found'},404);
